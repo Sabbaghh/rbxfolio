@@ -1,0 +1,164 @@
+[
+  {
+    "id": "battle-arena",
+    "title": "Battle Arena Legends",
+    "studio": "NovaGames Studio",
+    "role": "Lead Scripter",
+    "thumbnail": "/images/game-battle-arena.jpg",
+    "banner": "/images/game-battle-arena.jpg",
+    "description": "A fast-paced PvP arena game with unique character abilities, ranked matchmaking, and seasonal tournaments. Built to handle thousands of concurrent players with minimal latency.",
+    "responsibilities": [
+      "Designed and implemented the entire ability system with 20+ unique skills",
+      "Built the matchmaking system with skill-based ranking (ELO)",
+      "Optimized network replication for smooth PvP combat",
+      "Created anti-exploit systems for competitive integrity"
+    ],
+    "systems": [
+      "Custom Ability Framework with cooldowns and effects",
+      "Round-based Match System with spectator mode",
+      "DataStore-backed Leaderboard System",
+      "Server-authoritative Hit Detection"
+    ],
+    "challenges": [
+      "Achieving sub-100ms input latency for competitive play",
+      "Handling ability interactions and edge cases",
+      "Scaling to 50+ player servers without performance drops"
+    ],
+    "tools": ["Knit", "ProfileService", "Janitor", "Custom State Machine"]
+  },
+  {
+    "id": "survival-island",
+    "title": "Survival Island",
+    "studio": "Pixel Dreams",
+    "role": "Gameplay Engineer",
+    "thumbnail": "/images/game-survival.jpg",
+    "banner": "/images/game-survival.jpg",
+    "description": "An open-world survival game featuring crafting, base building, and dynamic weather systems. Players gather resources, build shelters, and survive against environmental challenges.",
+    "responsibilities": [
+      "Developed the procedural resource spawning system",
+      "Built the inventory and crafting systems from scratch",
+      "Implemented the day/night cycle with dynamic lighting",
+      "Created the building system with structural integrity"
+    ],
+    "systems": [
+      "Procedural World Generation",
+      "Grid-based Building System",
+      "Recipe-based Crafting Engine",
+      "Weather State Machine"
+    ],
+    "challenges": [
+      "Managing thousands of world objects efficiently",
+      "Syncing building state across all clients",
+      "Implementing save/load for complex player data"
+    ],
+    "tools": ["ProfileService", "Terrain API", "Custom OOP Framework"]
+  },
+  {
+    "id": "racing-fury",
+    "title": "Racing Fury",
+    "studio": "Velocity Games",
+    "role": "Systems Architect",
+    "thumbnail": "/images/game-racing.jpg",
+    "banner": "/images/game-racing.jpg",
+    "description": "A high-speed racing game with realistic vehicle physics, customizable cars, and competitive multiplayer races. Features a garage system and progression mechanics.",
+    "responsibilities": [
+      "Architected the vehicle physics system",
+      "Built the race management and checkpoint system",
+      "Developed the car customization and garage systems",
+      "Optimized for smooth 60+ FPS gameplay"
+    ],
+    "systems": [
+      "Custom Vehicle Physics Controller",
+      "Race State Manager with anti-cheat",
+      "Vehicle Customization System",
+      "Replay Recording System"
+    ],
+    "challenges": [
+      "Achieving realistic vehicle handling",
+      "Synchronizing vehicle positions at high speeds",
+      "Preventing speed and teleport exploits"
+    ],
+    "tools": ["BodyMovers", "Raycast Suspension", "Custom Networking"]
+  },
+  {
+    "id": "tower-defense",
+    "title": "Tower Defense Masters",
+    "studio": "Strategy Labs",
+    "role": "Core Developer",
+    "thumbnail": "/images/game-tower.jpg",
+    "banner": "/images/game-tower.jpg",
+    "description": "A strategic tower defense game with co-op multiplayer, hundreds of enemy types, and an endless mode. Features tower upgrades, special abilities, and boss battles.",
+    "responsibilities": [
+      "Designed the tower targeting and attack systems",
+      "Built the enemy wave spawning and pathfinding",
+      "Implemented co-op synchronization for 4 players",
+      "Created the upgrade and progression systems"
+    ],
+    "systems": [
+      "Priority-based Tower Targeting",
+      "A* Pathfinding for Enemies",
+      "Wave Configuration System",
+      "Damage Calculation Engine"
+    ],
+    "challenges": [
+      "Handling 500+ enemies without frame drops",
+      "Balancing tower stats and enemy health",
+      "Keeping clients in sync during intense waves"
+    ],
+    "tools": ["Object Pooling", "Custom ECS-like System", "ProfileService"]
+  },
+  {
+    "id": "social-hangout",
+    "title": "Chill Zone",
+    "studio": "Social Studios",
+    "role": "Lead Developer",
+    "thumbnail": "/images/game-social.jpg",
+    "banner": "/images/game-social.jpg",
+    "description": "A social hangout game with customizable apartments, mini-games, and virtual events. Players can host parties, play games with friends, and express themselves.",
+    "responsibilities": [
+      "Built the apartment customization system",
+      "Developed 10+ interactive mini-games",
+      "Created the virtual economy and trading system",
+      "Implemented the party and event systems"
+    ],
+    "systems": [
+      "Furniture Placement System",
+      "Mini-Game Framework",
+      "Trade System with scam protection",
+      "Event Scheduling System"
+    ],
+    "challenges": [
+      "Preventing item duplication exploits",
+      "Scaling apartment data storage",
+      "Creating engaging social features"
+    ],
+    "tools": ["DataStore2", "RemoteEvent Wrapper", "Custom UI Framework"]
+  },
+  {
+    "id": "horror-escape",
+    "title": "Escape the Entity",
+    "studio": "Nightmare Games",
+    "role": "Gameplay Programmer",
+    "thumbnail": "/images/game-horror.jpg",
+    "banner": "/images/game-horror.jpg",
+    "description": "A multiplayer horror game where players must escape a procedurally generated facility while being hunted by AI entities. Features proximity voice chat and atmospheric effects.",
+    "responsibilities": [
+      "Programmed the AI behavior tree system",
+      "Built procedural map generation",
+      "Implemented proximity-based audio systems",
+      "Created the escape objective system"
+    ],
+    "systems": [
+      "Behavior Tree AI System",
+      "Procedural Room Generation",
+      "3D Sound Propagation",
+      "Objective Tracking System"
+    ],
+    "challenges": [
+      "Creating unpredictable but fair AI",
+      "Generating solvable procedural maps",
+      "Optimizing lighting for horror atmosphere"
+    ],
+    "tools": ["Behavior Trees", "Pathfinding Service", "Sound Region3"]
+  }
+]
