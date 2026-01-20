@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState, useMemo, Suspense } from 'react';
+import { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Environment,
@@ -12,6 +12,27 @@ import {
 import * as THREE from 'three';
 
 // --- CONFIGURATION ---
+const SCROLL_ANIMATION_END = 400;
+const INITIAL_SCALE = 0.65;
+const FINAL_SCALE = 0.45;
+
+// --- VERTICAL POSITION CONFIG ---
+const INITIAL_Y = -0.8; // Starting position (Center)
+
+// 1. DESKTOP: Move DOWN to -1.3 so it settles lower in the corner
+const FINAL_Y_DESKTOP = -1.3;
+
+// 2. MOBILE: Keep it higher (-0.4) so it doesn't fall off the small screen
+const FINAL_Y_MOBILE = -0.4;
+
+// --- MOBILE SPECIFIC CONFIG ---
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_SCALE_MULTIPLIER = 0.35; // Size reduction for mobile
+const MOBILE_Y_OFFSET_ADJUSTMENT = -0.3; // Fine-tuning vertical pos for mobile
+
+// Easing
+const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+
 const SECTION_DATA = [
   { message: "Hi! I'm Ready.", pose: 'idle', face: 'happy', link: '' },
   { message: 'Check this out!', pose: 'jump', face: 'excited', link: '' },
@@ -39,11 +60,23 @@ function RobloxNoobCharacter({
   currentSection,
   onBubbleClick,
   bubbleMessage,
-}: any) {
+  characterScale,
+  yOffset,
+  forceWave = false,
+  showBubble = true,
+}: {
+  scrollY: number;
+  currentSection: number;
+  onBubbleClick: () => void;
+  bubbleMessage: string;
+  characterScale: number;
+  yOffset: number;
+  forceWave?: boolean;
+  showBubble?: boolean;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const { mouse } = useThree();
 
-  // Refs for animation
   const leftEyeRef = useRef<THREE.Mesh>(null);
   const rightEyeRef = useRef<THREE.Mesh>(null);
   const leftBrowRef = useRef<THREE.Mesh>(null);
@@ -54,17 +87,16 @@ function RobloxNoobCharacter({
   const auraLightRef = useRef<THREE.PointLight>(null);
 
   const currentData = SECTION_DATA[currentSection % SECTION_DATA.length];
-  const { pose, face } = currentData;
-  const [isHovered, setIsHovered] = useState(false);
+  const pose = forceWave ? 'wave' : currentData.pose;
+  const face = forceWave ? 'happy' : currentData.face;
+  const [, setIsHovered] = useState(false);
 
-  // --- SMOOTH ANIMATION LOOP ---
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // 1. Mouse Tracking
-    const targetRotX = -mouse.y * 0.5;
-    const targetRotY = mouse.x * 0.8;
-    // We add a "floating drift" rotation to the mouse look for that zero-gravity feel
+    // Mouse Tracking
+    const targetRotX = Math.max(-0.3, Math.min(0.3, -mouse.y * 0.5));
+    const targetRotY = Math.max(-0.6, Math.min(0.6, mouse.x * 0.8));
     const floatRot = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
 
     groupRef.current.rotation.x = THREE.MathUtils.lerp(
@@ -78,7 +110,7 @@ function RobloxNoobCharacter({
       delta * 5,
     );
 
-    // 2. Face Morphing Targets
+    // Face Morphing
     let tLeftEye = { scale: [1, 1, 1] };
     let tRightEye = { scale: [1, 1, 1] };
     let tMouth = { scale: [1, 1, 1], rotZ: 0, rotX: 0 };
@@ -96,7 +128,6 @@ function RobloxNoobCharacter({
       tBrows = { y: 1.75, rotZ: -0.15 };
     }
 
-    // Apply Face Animations
     if (leftEyeRef.current)
       leftEyeRef.current.scale.y = THREE.MathUtils.lerp(
         leftEyeRef.current.scale.y,
@@ -151,7 +182,7 @@ function RobloxNoobCharacter({
       );
     }
 
-    // 3. Arm Poses
+    // Arm Poses
     let tLeftArm = -0.1;
     let tRightArm = 0.1;
     let tBodyTilt = 0;
@@ -169,7 +200,6 @@ function RobloxNoobCharacter({
       tRightArm = Math.PI * 0.3;
     }
 
-    // Apply Arm Animations
     if (leftShoulderRef.current) {
       leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
         leftShoulderRef.current.rotation.z,
@@ -189,25 +219,18 @@ function RobloxNoobCharacter({
       rightShoulderRef.current.rotation.x = -0.15;
     }
 
-    // 4. "ALWAYS HOVERING" PHYSICS
-    // Stronger sine wave for constant floating
-    const hoverAmplitude = 0.15; // How high it bobs (Increased)
-    const hoverSpeed = 1.5; // How fast it bobs
+    // Hover Physics
+    const hoverAmplitude = 0.15;
+    const hoverSpeed = 1.5;
     const constantFloat =
       Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmplitude;
+    const targetY = yOffset + constantFloat + tBounce;
 
-    // Calculate final Y Position
-    const scrollOffset = -scrollY * 0.0005;
-    const targetY = scrollOffset + constantFloat + tBounce;
-
-    // Apply Position
     groupRef.current.position.y = THREE.MathUtils.lerp(
       groupRef.current.position.y,
       targetY,
       delta * 10,
     );
-
-    // Apply Rotation Tilt (Slight sway left/right while hovering)
     const hoverTilt = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
     groupRef.current.rotation.z = THREE.MathUtils.lerp(
       groupRef.current.rotation.z,
@@ -215,7 +238,6 @@ function RobloxNoobCharacter({
       delta * 3,
     );
 
-    // VFX: Pulse
     if (auraLightRef.current) {
       const targetIntensity =
         face === 'confident'
@@ -230,8 +252,7 @@ function RobloxNoobCharacter({
   });
 
   return (
-    <group scale={0.38} position={[0, -0.2, 0]}>
-      {/* VFX: Ambient Dust */}
+    <group scale={characterScale} position={[0, 0, 0]}>
       <Sparkles
         count={30}
         scale={5}
@@ -241,8 +262,6 @@ function RobloxNoobCharacter({
         color="#badaff"
         position={[0, 1, 0]}
       />
-
-      {/* VFX: Aura */}
       <pointLight
         ref={auraLightRef}
         position={[0, 1.5, -1]}
@@ -252,7 +271,6 @@ function RobloxNoobCharacter({
       />
 
       <group ref={groupRef}>
-        {/* VFX: Excitement */}
         {(face === 'excited' ||
           face === 'super-excited' ||
           face === 'wink') && (
@@ -267,37 +285,37 @@ function RobloxNoobCharacter({
           />
         )}
 
-        {/* --- CHAT BUBBLE --- */}
-        <group position={[0, 3.0, 0.5]}>
-          <RoundedBox args={[2.8, 0.8, 0.1]} radius={0.1}>
-            <meshStandardMaterial color="white" transparent opacity={0.95} />
-          </RoundedBox>
-          <Text
-            position={[0, 0, 0.06]}
-            fontSize={0.2}
-            color="#1a1a2e"
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={2.6}
-            textAlign="center"
-          >
-            {bubbleMessage}
-          </Text>
-          <mesh position={[0, -0.5, 0]} rotation={[0, 0, Math.PI]}>
-            <coneGeometry args={[0.15, 0.3, 3]} />
-            <meshStandardMaterial color="white" />
-          </mesh>
-          <mesh
-            onClick={onBubbleClick}
-            onPointerOver={() => setIsHovered(true)}
-            onPointerOut={() => setIsHovered(false)}
-            visible={false}
-          >
-            <planeGeometry args={[2.8, 0.8]} />
-          </mesh>
-        </group>
+        {showBubble && (
+          <group position={[0, 3.0, 0.5]}>
+            <RoundedBox args={[2.8, 0.8, 0.1]} radius={0.1}>
+              <meshStandardMaterial color="white" transparent opacity={0.95} />
+            </RoundedBox>
+            <Text
+              position={[0, 0, 0.06]}
+              fontSize={0.2}
+              color="#1a1a2e"
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={2.6}
+              textAlign="center"
+            >
+              {bubbleMessage}
+            </Text>
+            <mesh position={[0, -0.5, 0]} rotation={[0, 0, Math.PI]}>
+              <coneGeometry args={[0.15, 0.3, 3]} />
+              <meshStandardMaterial color="white" />
+            </mesh>
+            <mesh
+              onClick={onBubbleClick}
+              onPointerOver={() => setIsHovered(true)}
+              onPointerOut={() => setIsHovered(false)}
+              visible={false}
+            >
+              <planeGeometry args={[2.8, 0.8]} />
+            </mesh>
+          </group>
+        )}
 
-        {/* --- HEAD --- */}
         <RoundedBox
           args={[1.1, 1.1, 1.1]}
           radius={0.15}
@@ -306,8 +324,6 @@ function RobloxNoobCharacter({
         >
           <meshStandardMaterial color={COLORS.head} />
         </RoundedBox>
-
-        {/* --- EYES --- */}
         <mesh ref={leftEyeRef} position={[-0.22, 1.65, 0.56]}>
           <sphereGeometry args={[0.09, 32, 32]} />
           <meshStandardMaterial color={COLORS.eyes} />
@@ -316,8 +332,6 @@ function RobloxNoobCharacter({
           <sphereGeometry args={[0.09, 32, 32]} />
           <meshStandardMaterial color={COLORS.eyes} />
         </mesh>
-
-        {/* --- BROWS --- */}
         <mesh ref={leftBrowRef} position={[-0.22, 1.8, 0.55]}>
           <boxGeometry args={[0.18, 0.04, 0.02]} />
           <meshStandardMaterial color={COLORS.eyes} />
@@ -326,16 +340,12 @@ function RobloxNoobCharacter({
           <boxGeometry args={[0.18, 0.04, 0.02]} />
           <meshStandardMaterial color={COLORS.eyes} />
         </mesh>
-
-        {/* --- MOUTH --- */}
         <group ref={mouthRef} position={[0, 1.45, 0.58]}>
           <mesh rotation={[0, 0, Math.PI]}>
             <torusGeometry args={[0.12, 0.03, 12, 32, Math.PI]} />
             <meshStandardMaterial color={COLORS.mouth} />
           </mesh>
         </group>
-
-        {/* --- TORSO --- */}
         <RoundedBox
           args={[1.3, 1.2, 0.65]}
           radius={0.08}
@@ -344,8 +354,6 @@ function RobloxNoobCharacter({
         >
           <meshStandardMaterial color={COLORS.torso} />
         </RoundedBox>
-
-        {/* --- ARMS --- */}
         <group ref={leftShoulderRef} position={[-0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
@@ -363,7 +371,6 @@ function RobloxNoobCharacter({
             )}
           </mesh>
         </group>
-
         <group ref={rightShoulderRef} position={[0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
@@ -381,8 +388,6 @@ function RobloxNoobCharacter({
             )}
           </mesh>
         </group>
-
-        {/* --- LEGS --- */}
         <RoundedBox
           args={[0.5, 1.1, 0.5]}
           radius={0.06}
@@ -404,10 +409,10 @@ function RobloxNoobCharacter({
   );
 }
 
-// --- MAIN EXPORT ---
 export function RobloxCharacter3D() {
   const [scrollY, setScrollY] = useState(0);
   const [currentSection, setCurrentSection] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -416,15 +421,66 @@ export function RobloxCharacter3D() {
       const newSection = Math.floor(window.scrollY / sectionHeight);
       setCurrentSection(newSection);
     };
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
+  const scrollProgress = Math.min(
+    1,
+    Math.max(0, scrollY / SCROLL_ANIMATION_END),
+  );
+  const easedProgress = easeOutCubic(scrollProgress);
+
+  // --- SCALE LOGIC ---
+  let calculatedScale =
+    INITIAL_SCALE + (FINAL_SCALE - INITIAL_SCALE) * easedProgress;
+  if (isMobile) {
+    calculatedScale *= MOBILE_SCALE_MULTIPLIER;
+  }
+
+  // --- POSITION LOGIC ---
+  // If Mobile, target is FINAL_Y_MOBILE. If Desktop, target is FINAL_Y_DESKTOP.
+  const targetY = isMobile ? FINAL_Y_MOBILE : FINAL_Y_DESKTOP;
+
+  let calculatedYOffset = INITIAL_Y + (targetY - INITIAL_Y) * easedProgress;
+
+  if (isMobile) {
+    calculatedYOffset += MOBILE_Y_OFFSET_ADJUSTMENT;
+  }
+
+  // --- X POSITION ---
+  const rightPercent = isMobile ? 0 : 50 - 50 * easedProgress;
+  const translateXPercent = isMobile ? 0 : 50 - 50 * easedProgress;
+
+  const isInHeroSection = scrollY < 100;
   const sectionData = SECTION_DATA[currentSection % SECTION_DATA.length];
   const handleBubbleClick = () => window.open(sectionData.link, '_blank');
 
   return (
-    <div className="fixed right-0 top-0 w-[280px] md:w-[320px] lg:w-[400px] h-screen pointer-events-none z-30">
+    <div
+      // --- FIXES ---
+      // 1. overflow-visible: Ensures clipping never happens
+      // 2. touch-none: Better mobile scrolling experience
+      className={`fixed bottom-0 z-[100] pointer-events-none overflow-visible touch-none
+        ${isMobile ? 'w-[250px]' : 'w-[800px]'}
+      `}
+      style={{
+        right: `${rightPercent}%`,
+        transform: `translateX(${translateXPercent}%)`,
+        height: '100vh',
+      }}
+    >
       <Canvas
         camera={{ position: [0, 0.5, 4.5], fov: 40 }}
         style={{ background: 'transparent', pointerEvents: 'auto' }}
@@ -438,7 +494,13 @@ export function RobloxCharacter3D() {
             scrollY={scrollY}
             currentSection={currentSection}
             onBubbleClick={handleBubbleClick}
-            bubbleMessage={sectionData.message}
+            bubbleMessage={
+              isInHeroSection ? "Hi! I'm Ready." : sectionData.message
+            }
+            characterScale={calculatedScale}
+            yOffset={calculatedYOffset}
+            forceWave={isInHeroSection}
+            showBubble={!isInHeroSection}
           />
           <Environment preset="city" />
         </Suspense>

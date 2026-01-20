@@ -31,7 +31,7 @@ export function MiniGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isAutoPlay, setIsAutoPlay] = useState(true)
-  const [score, setScore] = useState(0)
+  const [, setScore] = useState(0)
   const [highScore, setHighScore] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   
@@ -404,7 +404,7 @@ export function MiniGame() {
       
       {/* Play button overlay */}
       {isAutoPlay && (
-        <div className="absolute top-3 right-3 flex gap-2">
+        <div className="absolute top-3 right-3 flex gap-2 z-40">
           <Button
             onClick={startGame}
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"

@@ -1,20 +1,23 @@
-import React from "react"
-import type { Metadata } from 'next'
-import { Space_Grotesk, Geist_Mono, Press_Start_2P } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import React from 'react';
+import type { Metadata } from 'next';
+import { Space_Grotesk, Geist_Mono, Press_Start_2P } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import './globals.css';
 
-const _spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _geistMono = Geist_Mono({ subsets: ['latin'] });
 const pressStart2P = Press_Start_2P({
   weight: '400',
-  subsets: ["latin"],
-  variable: '--font-press-start'
+  subsets: ['latin'],
+  variable: '--font-press-start',
 });
 
 export const metadata: Metadata = {
   title: 'Roblox Scripter Portfolio',
-  description: 'Professional Roblox scripter specializing in game systems, performance optimization, and multiplayer architecture',
+  description:
+    'Professional Roblox scripter specializing in game systems, performance optimization, and multiplayer architecture',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -33,12 +36,12 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -47,5 +50,5 @@ export default function RootLayout({
         <Analytics />
       </body>
     </html>
-  )
+  );
 }
