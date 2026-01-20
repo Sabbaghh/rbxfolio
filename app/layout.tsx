@@ -1,11 +1,16 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Space_Grotesk, Geist_Mono } from 'next/font/google'
+import { Space_Grotesk, Geist_Mono, Press_Start_2P } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const _spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const pressStart2P = Press_Start_2P({
+  weight: '400',
+  subsets: ["latin"],
+  variable: '--font-press-start'
+});
 
 export const metadata: Metadata = {
   title: 'Roblox Scripter Portfolio',
@@ -37,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased ${pressStart2P.variable}`}>
         {children}
         <Analytics />
       </body>
