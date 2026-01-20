@@ -2,41 +2,27 @@
 
 import { useRef, useEffect, useState, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Environment, RoundedBox, Text } from '@react-three/drei';
+import {
+  Environment,
+  RoundedBox,
+  Text,
+  Trail,
+  Sparkles,
+} from '@react-three/drei';
 import * as THREE from 'three';
 
-// --- 1. CONFIGURATION ---
+// --- CONFIGURATION ---
 const SECTION_DATA = [
+  { message: "Hi! I'm Ready.", pose: 'idle', face: 'happy', link: '' },
+  { message: 'Check this out!', pose: 'jump', face: 'excited', link: '' },
+  { message: "Let's connect!", pose: 'wave', face: 'wink', link: '' },
   {
-    message: 'Hey there! Welcome!',
-    pose: 'idle',
-    face: 'happy',
-    link: 'https://discord.gg/yourserver',
-  },
-  {
-    message: 'Check my projects!',
-    pose: 'jump',
-    face: 'excited',
-    link: 'https://discord.gg/yourserver',
-  },
-  {
-    message: 'Follow me for more!',
-    pose: 'wave',
-    face: 'wink',
-    link: 'https://x.com/yourhandle',
-  },
-  {
-    message: "Let's build cool stuff!",
+    message: 'I build cool things.',
     pose: 'excited',
     face: 'super-excited',
-    link: 'https://discord.gg/yourserver',
+    link: '',
   },
-  {
-    message: "Hiring? Let's chat!",
-    pose: 'confident',
-    face: 'confident',
-    link: 'https://discord.gg/yourserver',
-  },
+  { message: 'Hire me now.', pose: 'confident', face: 'confident', link: '' },
 ];
 
 const COLORS = {
@@ -48,218 +34,270 @@ const COLORS = {
   mouth: '#1a1a1a',
 };
 
-interface CharacterProps {
-  scrollY: number;
-  currentSection: number;
-  onBubbleClick: () => void;
-  bubbleMessage: string;
-}
-
 function RobloxNoobCharacter({
   scrollY,
   currentSection,
   onBubbleClick,
   bubbleMessage,
-}: CharacterProps) {
+}: any) {
   const groupRef = useRef<THREE.Group>(null);
-  const { viewport } = useThree();
-  const [targetRotation, setTargetRotation] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
+  const { mouse } = useThree();
 
-  const currentData = SECTION_DATA[currentSection % SECTION_DATA.length];
-  const currentPose = currentData.pose;
-  const currentFace = currentData.face;
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = -(e.clientY / window.innerHeight) * 2 + 1;
-      setTargetRotation({ x: y * 0.15, y: x * 0.3 });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // --- 2. FIXED POSES (DIRECTIONS FLIPPED) ---
-  const poseConfig = useMemo(() => {
-    // Math Logic:
-    // Left Arm: (-) rotates OUT to the left.
-    // Right Arm: (+) rotates OUT to the right.
-
-    const poses: Record<
-      string,
-      {
-        leftArm: number;
-        rightArm: number;
-        bodyTilt: number;
-        jumpHeight?: number;
-      }
-    > = {
-      idle: {
-        leftArm: -0.1, // Slight out to left
-        rightArm: 0.1, // Slight out to right
-        bodyTilt: 0,
-      },
-      wave: {
-        leftArm: -0.1,
-        rightArm: Math.PI * 0.85, // POSITIVE = Way up/out to the Right
-        bodyTilt: -0.05,
-      },
-      jump: {
-        leftArm: -Math.PI * 0.8, // NEGATIVE = Up/Out Left
-        rightArm: Math.PI * 0.8, // POSITIVE = Up/Out Right
-        bodyTilt: 0,
-        jumpHeight: 0.2,
-      },
-      excited: {
-        leftArm: -Math.PI * 0.3, // Out Left
-        rightArm: Math.PI * 0.3, // Out Right
-        bodyTilt: 0,
-      },
-      confident: {
-        leftArm: 0,
-        rightArm: 0.1,
-        bodyTilt: 0,
-      },
-    };
-    return poses[currentPose] || poses.idle;
-  }, [currentPose]);
-
+  // Refs for animation
+  const leftEyeRef = useRef<THREE.Mesh>(null);
+  const rightEyeRef = useRef<THREE.Mesh>(null);
+  const leftBrowRef = useRef<THREE.Mesh>(null);
+  const rightBrowRef = useRef<THREE.Mesh>(null);
+  const mouthRef = useRef<THREE.Group>(null);
   const leftShoulderRef = useRef<THREE.Group>(null);
   const rightShoulderRef = useRef<THREE.Group>(null);
+  const auraLightRef = useRef<THREE.PointLight>(null);
 
+  const currentData = SECTION_DATA[currentSection % SECTION_DATA.length];
+  const { pose, face } = currentData;
+  const [isHovered, setIsHovered] = useState(false);
+
+  // --- SMOOTH ANIMATION LOOP ---
   useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        targetRotation.y,
-        delta * 3,
+    if (!groupRef.current) return;
+
+    // 1. Mouse Tracking
+    const targetRotX = -mouse.y * 0.5;
+    const targetRotY = mouse.x * 0.8;
+    // We add a "floating drift" rotation to the mouse look for that zero-gravity feel
+    const floatRot = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+
+    groupRef.current.rotation.x = THREE.MathUtils.lerp(
+      groupRef.current.rotation.x,
+      targetRotX + floatRot,
+      delta * 5,
+    );
+    groupRef.current.rotation.y = THREE.MathUtils.lerp(
+      groupRef.current.rotation.y,
+      targetRotY,
+      delta * 5,
+    );
+
+    // 2. Face Morphing Targets
+    let tLeftEye = { scale: [1, 1, 1] };
+    let tRightEye = { scale: [1, 1, 1] };
+    let tMouth = { scale: [1, 1, 1], rotZ: 0, rotX: 0 };
+    let tBrows = { y: 1.8, rotZ: 0 };
+
+    if (face === 'wink') {
+      tLeftEye = { scale: [1, 0.1, 1] };
+    } else if (face === 'excited' || face === 'super-excited') {
+      tLeftEye = { scale: [1.2, 1.2, 1] };
+      tRightEye = { scale: [1.2, 1.2, 1] };
+      tMouth = { scale: [1.3, 1.3, 1], rotZ: 0, rotX: 0.2 };
+      tBrows = { y: 1.9, rotZ: 0.2 };
+    } else if (face === 'confident') {
+      tMouth = { scale: [0.8, 0.8, 1], rotZ: -0.2, rotX: 0 };
+      tBrows = { y: 1.75, rotZ: -0.15 };
+    }
+
+    // Apply Face Animations
+    if (leftEyeRef.current)
+      leftEyeRef.current.scale.y = THREE.MathUtils.lerp(
+        leftEyeRef.current.scale.y,
+        tLeftEye.scale[1],
+        delta * 12,
       );
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(
-        groupRef.current.rotation.z,
-        poseConfig.bodyTilt,
-        delta * 2,
+    if (rightEyeRef.current)
+      rightEyeRef.current.scale.y = THREE.MathUtils.lerp(
+        rightEyeRef.current.scale.y,
+        tRightEye.scale[1],
+        delta * 12,
       );
-
-      const scrollOffset = scrollY * 0.001;
-      let yPos =
-        -scrollOffset * 0.5 + Math.sin(state.clock.elapsedTime * 0.8) * 0.03;
-
-      if (poseConfig.jumpHeight) {
-        yPos += Math.abs(Math.sin(state.clock.elapsedTime * 5)) * 0.3;
-      }
-
-      groupRef.current.position.y = THREE.MathUtils.lerp(
-        groupRef.current.position.y,
-        yPos,
-        delta * 3,
+    if (mouthRef.current) {
+      mouthRef.current.rotation.z = THREE.MathUtils.lerp(
+        mouthRef.current.rotation.z,
+        tMouth.rotZ,
+        delta * 12,
+      );
+      mouthRef.current.rotation.x = THREE.MathUtils.lerp(
+        mouthRef.current.rotation.x,
+        tMouth.rotX,
+        delta * 12,
+      );
+      mouthRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          mouthRef.current.scale.x,
+          tMouth.scale[0],
+          delta * 12,
+        ),
+      );
+    }
+    if (leftBrowRef.current && rightBrowRef.current) {
+      leftBrowRef.current.position.y = THREE.MathUtils.lerp(
+        leftBrowRef.current.position.y,
+        tBrows.y,
+        delta * 10,
+      );
+      leftBrowRef.current.rotation.z = THREE.MathUtils.lerp(
+        leftBrowRef.current.rotation.z,
+        tBrows.rotZ,
+        delta * 10,
+      );
+      rightBrowRef.current.position.y = THREE.MathUtils.lerp(
+        rightBrowRef.current.position.y,
+        tBrows.y,
+        delta * 10,
+      );
+      rightBrowRef.current.rotation.z = THREE.MathUtils.lerp(
+        rightBrowRef.current.rotation.z,
+        -tBrows.rotZ,
+        delta * 10,
       );
     }
 
-    // --- ANIMATE ARMS ---
-    if (leftShoulderRef.current) {
-      // Left Arm Animation
-      // We use NEGATIVE values to go OUT
-      const breath = -Math.abs(Math.sin(state.clock.elapsedTime * 2) * 0.05);
+    // 3. Arm Poses
+    let tLeftArm = -0.1;
+    let tRightArm = 0.1;
+    let tBodyTilt = 0;
+    let tBounce = 0;
 
+    if (pose === 'wave') {
+      tRightArm = Math.PI * 0.85;
+      tBodyTilt = -0.05;
+    } else if (pose === 'jump') {
+      tLeftArm = -Math.PI * 0.8;
+      tRightArm = Math.PI * 0.8;
+      tBounce = Math.abs(Math.sin(state.clock.elapsedTime * 8)) * 0.2;
+    } else if (pose === 'excited') {
+      tLeftArm = -Math.PI * 0.3;
+      tRightArm = Math.PI * 0.3;
+    }
+
+    // Apply Arm Animations
+    if (leftShoulderRef.current) {
       leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
         leftShoulderRef.current.rotation.z,
-        poseConfig.leftArm + breath,
-        delta * 4,
+        tLeftArm,
+        delta * 8,
       );
-
-      // Slight forward tilt to prevent clipping
-      leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-        leftShoulderRef.current.rotation.x,
-        -0.1,
-        delta * 4,
-      );
+      leftShoulderRef.current.rotation.x = -0.15;
     }
-
     if (rightShoulderRef.current) {
-      // Right Arm Animation
-      // We use POSITIVE values to go OUT
-      // For wave: Big sine wave. For idle: Small breath.
-      const waveOffset =
-        currentPose === 'wave'
-          ? Math.sin(state.clock.elapsedTime * 8) * 0.3
-          : Math.abs(Math.sin(state.clock.elapsedTime * 2) * 0.05);
-
+      const wave =
+        pose === 'wave' ? Math.sin(state.clock.elapsedTime * 12) * 0.4 : 0;
       rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
         rightShoulderRef.current.rotation.z,
-        poseConfig.rightArm + waveOffset,
-        delta * 4,
+        tRightArm + wave,
+        delta * 8,
       );
+      rightShoulderRef.current.rotation.x = -0.15;
+    }
 
-      rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-        rightShoulderRef.current.rotation.x,
-        -0.1,
-        delta * 4,
+    // 4. "ALWAYS HOVERING" PHYSICS
+    // Stronger sine wave for constant floating
+    const hoverAmplitude = 0.15; // How high it bobs (Increased)
+    const hoverSpeed = 1.5; // How fast it bobs
+    const constantFloat =
+      Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmplitude;
+
+    // Calculate final Y Position
+    const scrollOffset = -scrollY * 0.0005;
+    const targetY = scrollOffset + constantFloat + tBounce;
+
+    // Apply Position
+    groupRef.current.position.y = THREE.MathUtils.lerp(
+      groupRef.current.position.y,
+      targetY,
+      delta * 10,
+    );
+
+    // Apply Rotation Tilt (Slight sway left/right while hovering)
+    const hoverTilt = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+    groupRef.current.rotation.z = THREE.MathUtils.lerp(
+      groupRef.current.rotation.z,
+      tBodyTilt + hoverTilt,
+      delta * 3,
+    );
+
+    // VFX: Pulse
+    if (auraLightRef.current) {
+      const targetIntensity =
+        face === 'confident'
+          ? 0.8 + Math.sin(state.clock.elapsedTime * 3) * 0.2
+          : 0;
+      auraLightRef.current.intensity = THREE.MathUtils.lerp(
+        auraLightRef.current.intensity,
+        targetIntensity,
+        delta * 5,
       );
     }
   });
 
-  const characterScale = viewport.width > 6 ? 0.55 : 0.4;
-
   return (
-    <Float speed={1} rotationIntensity={0.02} floatIntensity={0.15}>
-      <group ref={groupRef} scale={characterScale} position={[0, 0.2, 0]}>
-        {/* --- CHAT BUBBLE --- */}
-        <group position={[0, 2.6, 0.5]}>
-          <mesh position={[0, 0, -0.1]}>
-            <RoundedBox args={[2.6, 0.9, 0.1]} radius={0.15} smoothness={4}>
-              <meshStandardMaterial
-                color="#ffffff"
-                transparent
-                opacity={0.95}
-              />
-            </RoundedBox>
-          </mesh>
-          <mesh position={[0, 0, -0.15]}>
-            <RoundedBox args={[2.7, 1.0, 0.08]} radius={0.18} smoothness={4}>
-              <meshStandardMaterial
-                color="#8b5cf6"
-                transparent
-                opacity={0.6}
-                emissive="#8b5cf6"
-                emissiveIntensity={0.3}
-              />
-            </RoundedBox>
-          </mesh>
-          <mesh position={[0, -0.55, -0.1]} rotation={[0, 0, Math.PI]}>
-            <coneGeometry args={[0.15, 0.3, 3]} />
-            <meshStandardMaterial color="#ffffff" />
-          </mesh>
-        </group>
+    <group scale={0.38} position={[0, -0.2, 0]}>
+      {/* VFX: Ambient Dust */}
+      <Sparkles
+        count={30}
+        scale={5}
+        size={2}
+        speed={0.4}
+        opacity={0.4}
+        color="#badaff"
+        position={[0, 1, 0]}
+      />
 
-        <group position={[0, 2.6, 0.6]}>
+      {/* VFX: Aura */}
+      <pointLight
+        ref={auraLightRef}
+        position={[0, 1.5, -1]}
+        color="#8b5cf6"
+        distance={5}
+        intensity={0}
+      />
+
+      <group ref={groupRef}>
+        {/* VFX: Excitement */}
+        {(face === 'excited' ||
+          face === 'super-excited' ||
+          face === 'wink') && (
+          <Sparkles
+            count={15}
+            scale={2}
+            size={4}
+            speed={0.4}
+            opacity={1}
+            color="#FFF"
+            position={[0, 1.8, 0]}
+          />
+        )}
+
+        {/* --- CHAT BUBBLE --- */}
+        <group position={[0, 3.0, 0.5]}>
+          <RoundedBox args={[2.8, 0.8, 0.1]} radius={0.1}>
+            <meshStandardMaterial color="white" transparent opacity={0.95} />
+          </RoundedBox>
+          <Text
+            position={[0, 0, 0.06]}
+            fontSize={0.2}
+            color="#1a1a2e"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={2.6}
+            textAlign="center"
+          >
+            {bubbleMessage}
+          </Text>
+          <mesh position={[0, -0.5, 0]} rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.15, 0.3, 3]} />
+            <meshStandardMaterial color="white" />
+          </mesh>
           <mesh
             onClick={onBubbleClick}
-            onPointerEnter={() => setIsHovered(true)}
-            onPointerLeave={() => setIsHovered(false)}
+            onPointerOver={() => setIsHovered(true)}
+            onPointerOut={() => setIsHovered(false)}
+            visible={false}
           >
-            <planeGeometry args={[2.6, 0.9]} />
-            <meshBasicMaterial transparent opacity={0} />
+            <planeGeometry args={[2.8, 0.8]} />
           </mesh>
         </group>
 
-        {/* --- TEXT --- */}
-        <Text
-          position={[0, 2.6, 0.56]}
-          fontSize={0.2}
-          color={isHovered ? '#8b5cf6' : '#1a1a2e'}
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={2.3}
-          textAlign="center"
-          lineHeight={1.4}
-          // Uncomment for pixel font
-          // font="https://fonts.gstatic.com/s/pressstart2p/v14/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff"
-        >
-          {bubbleMessage}
-        </Text>
-
-        {/* --- CHARACTER --- */}
+        {/* --- HEAD --- */}
         <RoundedBox
           args={[1.1, 1.1, 1.1]}
           radius={0.15}
@@ -269,87 +307,35 @@ function RobloxNoobCharacter({
           <meshStandardMaterial color={COLORS.head} />
         </RoundedBox>
 
-        {/* Faces */}
-        {currentFace === 'wink' ? (
-          <>
-            <mesh position={[-0.2, 1.65, 0.56]}>
-              <boxGeometry args={[0.16, 0.04, 0.02]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-            <mesh position={[0.2, 1.65, 0.56]}>
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-          </>
-        ) : currentFace === 'super-excited' ? (
-          <>
-            <mesh position={[-0.2, 1.65, 0.56]}>
-              <sphereGeometry args={[0.11, 16, 16]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-            <mesh position={[0.2, 1.65, 0.56]}>
-              <sphereGeometry args={[0.11, 16, 16]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-            <mesh position={[-0.2, 1.65, 0.58]}>
-              <sphereGeometry args={[0.03, 16, 16]} />
-              <meshStandardMaterial color="#ffffff" />
-            </mesh>
-            <mesh position={[0.2, 1.65, 0.58]}>
-              <sphereGeometry args={[0.03, 16, 16]} />
-              <meshStandardMaterial color="#ffffff" />
-            </mesh>
-          </>
-        ) : (
-          <>
-            <mesh position={[-0.2, 1.65, 0.56]}>
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-            <mesh position={[0.2, 1.65, 0.56]}>
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshStandardMaterial color={COLORS.eyes} />
-            </mesh>
-          </>
-        )}
+        {/* --- EYES --- */}
+        <mesh ref={leftEyeRef} position={[-0.22, 1.65, 0.56]}>
+          <sphereGeometry args={[0.09, 32, 32]} />
+          <meshStandardMaterial color={COLORS.eyes} />
+        </mesh>
+        <mesh ref={rightEyeRef} position={[0.22, 1.65, 0.56]}>
+          <sphereGeometry args={[0.09, 32, 32]} />
+          <meshStandardMaterial color={COLORS.eyes} />
+        </mesh>
 
-        {/* Mouth */}
-        {currentFace === 'super-excited' ? (
-          <group position={[0, 1.38, 0.56]}>
-            <mesh position={[-0.1, 0, 0]} rotation={[0, 0, -0.4]}>
-              <boxGeometry args={[0.14, 0.06, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-            <mesh position={[0.1, 0, 0]} rotation={[0, 0, 0.4]}>
-              <boxGeometry args={[0.14, 0.06, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-          </group>
-        ) : currentFace === 'confident' ? (
-          <group position={[0, 1.4, 0.56]}>
-            <mesh position={[-0.05, 0, 0]} rotation={[0, 0, -0.2]}>
-              <boxGeometry args={[0.1, 0.05, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-            <mesh position={[0.08, 0.02, 0]} rotation={[0, 0, 0.4]}>
-              <boxGeometry args={[0.12, 0.05, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-          </group>
-        ) : (
-          <group position={[0, 1.4, 0.56]}>
-            <mesh position={[-0.08, 0, 0]} rotation={[0, 0, -0.3]}>
-              <boxGeometry args={[0.12, 0.05, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-            <mesh position={[0.08, 0, 0]} rotation={[0, 0, 0.3]}>
-              <boxGeometry args={[0.12, 0.05, 0.02]} />
-              <meshStandardMaterial color={COLORS.mouth} />
-            </mesh>
-          </group>
-        )}
+        {/* --- BROWS --- */}
+        <mesh ref={leftBrowRef} position={[-0.22, 1.8, 0.55]}>
+          <boxGeometry args={[0.18, 0.04, 0.02]} />
+          <meshStandardMaterial color={COLORS.eyes} />
+        </mesh>
+        <mesh ref={rightBrowRef} position={[0.22, 1.8, 0.55]}>
+          <boxGeometry args={[0.18, 0.04, 0.02]} />
+          <meshStandardMaterial color={COLORS.eyes} />
+        </mesh>
 
-        {/* Torso */}
+        {/* --- MOUTH --- */}
+        <group ref={mouthRef} position={[0, 1.45, 0.58]}>
+          <mesh rotation={[0, 0, Math.PI]}>
+            <torusGeometry args={[0.12, 0.03, 12, 32, Math.PI]} />
+            <meshStandardMaterial color={COLORS.mouth} />
+          </mesh>
+        </group>
+
+        {/* --- TORSO --- */}
         <RoundedBox
           args={[1.3, 1.2, 0.65]}
           radius={0.08}
@@ -359,24 +345,44 @@ function RobloxNoobCharacter({
           <meshStandardMaterial color={COLORS.torso} />
         </RoundedBox>
 
-        {/* --- ARMS (Shoulder Pivots) --- */}
-        <group ref={leftShoulderRef} position={[-0.9, 0.9, 0]}>
+        {/* --- ARMS --- */}
+        <group ref={leftShoulderRef} position={[-0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
               <meshStandardMaterial color={COLORS.arms} />
             </RoundedBox>
+            {pose === 'jump' && (
+              <group position={[0, -0.5, 0]}>
+                <Trail
+                  width={0.8}
+                  length={3}
+                  color="#FFF"
+                  attenuation={(t) => t * t}
+                />
+              </group>
+            )}
           </mesh>
         </group>
 
-        <group ref={rightShoulderRef} position={[0.9, 0.9, 0]}>
+        <group ref={rightShoulderRef} position={[0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
               <meshStandardMaterial color={COLORS.arms} />
             </RoundedBox>
+            {(pose === 'wave' || pose === 'jump') && (
+              <group position={[0, -0.5, 0]}>
+                <Trail
+                  width={0.8}
+                  length={3}
+                  color="#FFF"
+                  attenuation={(t) => t * t}
+                />
+              </group>
+            )}
           </mesh>
         </group>
 
-        {/* Legs */}
+        {/* --- LEGS --- */}
         <RoundedBox
           args={[0.5, 1.1, 0.5]}
           radius={0.06}
@@ -394,65 +400,11 @@ function RobloxNoobCharacter({
           <meshStandardMaterial color={COLORS.legs} />
         </RoundedBox>
       </group>
-    </Float>
-  );
-}
-
-function FloatingParticles({ scrollY }: { scrollY: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.05;
-      groupRef.current.position.y = -scrollY * 0.0005;
-    }
-  });
-  return (
-    <group ref={groupRef}>
-      {[...Array(6)].map((_, i) => (
-        <Float
-          key={i}
-          speed={1.5 + i * 0.2}
-          rotationIntensity={0.3}
-          floatIntensity={0.8}
-        >
-          <mesh
-            position={[
-              Math.sin(i * 1.2) * 3,
-              Math.cos(i * 0.8) * 1.5,
-              Math.sin(i * 0.5) * 2 - 1,
-            ]}
-          >
-            <boxGeometry args={[0.08, 0.08, 0.08]} />
-            <meshStandardMaterial
-              color={
-                [
-                  '#8b5cf6',
-                  '#ec4899',
-                  '#3b82f6',
-                  '#06b6d4',
-                  '#f472b6',
-                  '#a855f7',
-                ][i]
-              }
-              emissive={
-                [
-                  '#8b5cf6',
-                  '#ec4899',
-                  '#3b82f6',
-                  '#06b6d4',
-                  '#f472b6',
-                  '#a855f7',
-                ][i]
-              }
-              emissiveIntensity={0.3}
-            />
-          </mesh>
-        </Float>
-      ))}
     </group>
   );
 }
 
+// --- MAIN EXPORT ---
 export function RobloxCharacter3D() {
   const [scrollY, setScrollY] = useState(0);
   const [currentSection, setCurrentSection] = useState(0);
@@ -464,7 +416,7 @@ export function RobloxCharacter3D() {
       const newSection = Math.floor(window.scrollY / sectionHeight);
       setCurrentSection(newSection);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -472,16 +424,15 @@ export function RobloxCharacter3D() {
   const handleBubbleClick = () => window.open(sectionData.link, '_blank');
 
   return (
-    <div className="fixed right-0 top-0 w-[280px] md:w-[350px] lg:w-[420px] h-screen pointer-events-none z-30">
+    <div className="fixed right-0 top-0 w-[280px] md:w-[320px] lg:w-[400px] h-screen pointer-events-none z-30">
       <Canvas
-        camera={{ position: [0, 0.5, 4.5], fov: 45 }}
+        camera={{ position: [0, 0.5, 4.5], fov: 40 }}
         style={{ background: 'transparent', pointerEvents: 'auto' }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[5, 5, 5]} intensity={1} />
-          <pointLight position={[-3, 3, 3]} intensity={0.4} color="#8b5cf6" />
-          <pointLight position={[3, -2, 2]} intensity={0.3} color="#ec4899" />
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[5, 5, 5]} intensity={1.2} />
+          <pointLight position={[-3, 2, 3]} color="#8b5cf6" intensity={0.4} />
 
           <RobloxNoobCharacter
             scrollY={scrollY}
@@ -489,7 +440,6 @@ export function RobloxCharacter3D() {
             onBubbleClick={handleBubbleClick}
             bubbleMessage={sectionData.message}
           />
-          <FloatingParticles scrollY={scrollY} />
           <Environment preset="city" />
         </Suspense>
       </Canvas>
