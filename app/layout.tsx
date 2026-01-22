@@ -15,10 +15,10 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: 'Roblox Scripter Portfolio',
+  title: 'Sabbz - Roblox Scripter Portfolio',
   description:
-    'Professional Roblox scripter specializing in game systems, performance optimization, and multiplayer architecture',
-  generator: 'v0.app',
+    'Roblox scripter specializing in frotnend development, I turn game design documents into polished, launch-ready Roblox games.',
+  generator: 'Sabbaz',
   icons: {
     icon: [
       {
