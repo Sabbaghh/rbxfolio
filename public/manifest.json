@@ -1,0 +1,36 @@
+{
+  "name": "Sabbz - Roblox Scripter Portfolio | Devx #Roblox #robloxDev",
+  "short_name": "Sabbz Portfolio",
+  "description": "Professional Roblox scripter specializing in frontend development. Expert in Adopt Me, Blox Fruits, Brookhaven, Pet Simulator X style games. #Roblox #robloxDev #robloxDevx",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "categories": ["games", "entertainment", "developer"],
+  "keywords": [
+    "Roblox",
+    "Roblox Developer",
+    "Devx",
+    "robloxDev",
+    "robloxDevx",
+    "Game Development",
+    "Adopt Me",
+    "Blox Fruits",
+    "Brookhaven",
+    "Pet Simulator X"
+  ],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
