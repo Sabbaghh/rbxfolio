@@ -1,34 +1,40 @@
-"use client"
+'use client';
 
-import React from "react"
+import React from 'react';
 
-import Image from "next/image"
-import { cn } from "@/lib/utils"
-import { Play } from "lucide-react"
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { Play } from 'lucide-react';
 
 interface GameCardProps {
-  id: string
-  title: string
-  studio: string
-  role: string
-  thumbnail: string
-  onClick: () => void
+  id: string;
+  title: string;
+  studio: string;
+  role: string;
+  thumbnail: string;
+  onClick: () => void;
 }
 
-export function GameCard({ title, studio, role, thumbnail, onClick }: GameCardProps) {
+export function GameCard({
+  title,
+  studio,
+  role,
+  thumbnail,
+  onClick,
+}: GameCardProps) {
   const roleColors: Record<string, string> = {
-    "Lead Scripter": "bg-neon-purple/90",
-    "Gameplay Engineer": "bg-neon-blue/90",
-    "Systems Architect": "bg-neon-cyan/90",
-    "Core Developer": "bg-neon-pink/90",
-    "Lead Developer": "bg-neon-purple/90",
-    "Gameplay Programmer": "bg-neon-blue/90",
-  }
+    'Lead Scripter': 'bg-neon-purple/90',
+    'Gameplay Engineer': 'bg-neon-blue/90',
+    'Systems Architect': 'bg-neon-cyan/90',
+    'Core Developer': 'bg-neon-pink/90',
+    'Lead Developer': 'bg-neon-purple/90',
+    'Gameplay Programmer': 'bg-neon-blue/90',
+  };
 
   const handleDiscordClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    window.open("https://discord.gg/yourserver", "_blank")
-  }
+    e.stopPropagation();
+    window.open('https://discord.gg/yourserver', '_blank');
+  };
 
   return (
     <button
@@ -37,25 +43,27 @@ export function GameCard({ title, studio, role, thumbnail, onClick }: GameCardPr
     >
       <div className="relative aspect-video w-full overflow-hidden">
         <Image
-          src={thumbnail || "/placeholder.svg"}
+          src={thumbnail || '/placeholder.svg'}
           alt={title}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80" />
-        
+
         {/* Role Badge */}
         <div className="absolute top-3 left-3">
-          <span className={cn(
-            "px-3 py-1 rounded-full text-xs font-semibold text-primary-foreground backdrop-blur-sm",
-            roleColors[role] || "bg-primary/90"
-          )}>
+          <span
+            className={cn(
+              'px-3 py-1 rounded-full text-xs font-semibold text-primary-foreground backdrop-blur-sm',
+              roleColors[role] || 'bg-primary/90',
+            )}
+          >
             {role}
           </span>
         </div>
 
         {/* Play Button Overlay - Discord CTA */}
-        <div 
+        {/* <div 
           className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
           onClick={handleDiscordClick}
         >
@@ -68,22 +76,20 @@ export function GameCard({ title, studio, role, thumbnail, onClick }: GameCardPr
               Contact on Discord
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
-      
+
       <div className="p-4">
         <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
           {title}
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {studio}
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">{studio}</p>
       </div>
-      
+
       {/* Hover glow effect */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
       </div>
     </button>
-  )
+  );
 }

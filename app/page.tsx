@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/header';
 import { GameCard } from '@/components/game-card';
 import { GameModal } from '@/components/game-modal';
@@ -35,6 +35,51 @@ export default function HomePage() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- SECTION TRACKING ---
+  const [activeSection, setActiveSection] = useState(0);
+
+  // Refs for tracking visibility
+  const heroRef = useRef<HTMLDivElement>(null);
+  const workRef = useRef<HTMLElement>(null);
+  const miniGameRef = useRef<HTMLElement>(null);
+  const mediaRef = useRef<HTMLElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // The order here MUST match SECTION_DATA in RobloxCharacter3D
+    const sections = [
+      heroRef.current, // Index 0
+      workRef.current, // Index 1
+      miniGameRef.current, // Index 2
+      mediaRef.current, // Index 3
+      ctaRef.current, // Index 4
+    ];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = sections.indexOf(entry.target as any);
+            if (index !== -1) {
+              setActiveSection(index);
+            }
+          }
+        });
+      },
+      {
+        // -40% margin means the trigger happens when the element is near the center of the screen
+        rootMargin: '-40% 0px -40% 0px',
+        threshold: 0,
+      },
+    );
+
+    sections.forEach((section) => {
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleGameClick = (game: Game) => {
     setSelectedGame(game);
     setIsModalOpen(true);
@@ -52,8 +97,11 @@ export default function HomePage() {
       <main className="relative">
         {/* Hero Section with Parallax */}
         <ParallaxBackground className="border-b border-border min-h-screen flex items-center">
-          <div className="container mx-auto px-4 py-16 md:py-24 relative">
-            {/* Three-column grid: Left Text | Character Space | Stats */}
+          {/* Attached Ref to tracker */}
+          <div
+            ref={heroRef}
+            className="container mx-auto px-4 py-16 md:py-24 relative"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px_1fr] xl:grid-cols-[1fr_400px_1fr] gap-8 lg:gap-4 items-center min-h-[70vh]">
               {/* Left Column - Primary Content */}
               <div className="order-2 lg:order-1 text-center lg:text-left">
@@ -88,9 +136,9 @@ export default function HomePage() {
                 </ParallaxSection>
               </div>
 
-              {/* Center Column - Character Space (character is rendered separately) */}
+              {/* Center Column - Character Space */}
               <div className="order-1 z-30 lg:order-2 flex justify-center items-center h-[300px] lg:h-[400px]">
-                {/* This space is reserved for the 3D character which is rendered via RobloxCharacter3D */}
+                {/* Character rendered via fixed component below */}
               </div>
 
               {/* Right Column - Stats */}
@@ -124,8 +172,11 @@ export default function HomePage() {
         </ParallaxBackground>
 
         {/* Featured Games Section */}
-        <section className="py-16 md:py-24 relative overflow-hidden">
-          {/* Background gradient layers */}
+        {/* Attached Ref to tracker */}
+        <section
+          ref={workRef}
+          className="py-16 md:py-24 relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-neon-purple/5 to-transparent pointer-events-none" />
 
           <div className="container mx-auto px-4 relative">
@@ -155,8 +206,29 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Media Section */}
+        {/* Attached Ref to tracker */}
+        <section ref={mediaRef} className="py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                Latest Updates
+              </h2>
+              <p className="text-muted-foreground mt-1">
+                Clips and demos from my X feed
+              </p>
+            </div>
+
+            <MediaCarousel items={mediaData} />
+          </div>
+        </section>
+
         {/* Mini Game Section */}
-        <section className="py-16 md:py-24 bg-secondary/30 border-y border-border">
+        {/* Attached Ref to tracker */}
+        <section
+          ref={miniGameRef}
+          className="py-16 md:py-24 bg-secondary/30 border-y border-border"
+        >
           <div className="container mx-auto px-4">
             <div className="mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
@@ -173,25 +245,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Media Section */}
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Latest Updates
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                Clips and demos from my X feed
-              </p>
-            </div>
-
-            <MediaCarousel items={mediaData} />
-          </div>
-        </section>
-
         {/* CTA Section with Parallax */}
         <ParallaxBackground className="py-16 md:py-24 border-t border-border">
-          <div className="container mx-auto px-4 text-center">
+          {/* Attached Ref to tracker */}
+          <div ref={ctaRef} className="container mx-auto px-4 text-center">
             <ParallaxSection speed={0.1}>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">
                 Ready to build something{' '}
@@ -264,8 +321,8 @@ export default function HomePage() {
         onClose={handleCloseModal}
       />
 
-      {/* 3D Roblox Character that follows scroll */}
-      <RobloxCharacter3D />
+      {/* 3D Roblox Character - Passing the detected activeSection */}
+      <RobloxCharacter3D activeSection={activeSection} />
     </div>
   );
 }

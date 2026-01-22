@@ -13,37 +13,54 @@ import * as THREE from 'three';
 
 // --- CONFIGURATION ---
 const SCROLL_ANIMATION_END = 400;
-const INITIAL_SCALE = 0.65;
-const FINAL_SCALE = 0.45;
+const INITIAL_SCALE = 0.55;
+const FINAL_SCALE = 0.35;
 
 // --- VERTICAL POSITION CONFIG ---
-const INITIAL_Y = -0.8; // Starting position (Center)
-
-// 1. DESKTOP: Move DOWN to -1.3 so it settles lower in the corner
+const INITIAL_Y = -0.8;
 const FINAL_Y_DESKTOP = -1.3;
-
-// 2. MOBILE: Keep it higher (-0.4) so it doesn't fall off the small screen
 const FINAL_Y_MOBILE = -0.4;
 
 // --- MOBILE SPECIFIC CONFIG ---
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_SCALE_MULTIPLIER = 0.35; // Size reduction for mobile
-const MOBILE_Y_OFFSET_ADJUSTMENT = -0.3; // Fine-tuning vertical pos for mobile
+const MOBILE_SCALE_MULTIPLIER = 0.35;
+const MOBILE_Y_OFFSET_ADJUSTMENT = -0.3;
 
 // Easing
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 
+// --- SECTION DATA ---
 const SECTION_DATA = [
-  { message: "Hi! I'm Ready.", pose: 'idle', face: 'happy', link: '' },
-  { message: 'Check this out!', pose: 'jump', face: 'excited', link: '' },
-  { message: "Let's connect!", pose: 'wave', face: 'wink', link: '' },
   {
-    message: 'I build cool things.',
-    pose: 'excited',
+    message: "Hi! I'm Ready.",
+    pose: 'idle',
+    face: 'happy',
+    link: '',
+  },
+  {
+    message: 'Check this out!',
+    pose: 'jump',
+    face: 'excited',
+    link: '',
+  },
+  {
+    message: 'Can you beat me?',
+    pose: 'confident',
     face: 'super-excited',
     link: '',
   },
-  { message: 'Hire me now.', pose: 'confident', face: 'confident', link: '' },
+  {
+    message: "Let's connect!",
+    pose: 'wave',
+    face: 'wink',
+    link: 'https://x.com/yourhandle',
+  },
+  {
+    message: 'Hire me now.',
+    pose: 'confident',
+    face: 'confident',
+    link: '',
+  },
 ];
 
 const COLORS = {
@@ -409,17 +426,17 @@ function RobloxNoobCharacter({
   );
 }
 
-export function RobloxCharacter3D() {
+export function RobloxCharacter3D({
+  activeSection = 0,
+}: {
+  activeSection?: number;
+}) {
   const [scrollY, setScrollY] = useState(0);
-  const [currentSection, setCurrentSection] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
-      const sectionHeight = window.innerHeight * 0.8;
-      const newSection = Math.floor(window.scrollY / sectionHeight);
-      setCurrentSection(newSection);
     };
 
     const handleResize = () => {
@@ -449,34 +466,41 @@ export function RobloxCharacter3D() {
     calculatedScale *= MOBILE_SCALE_MULTIPLIER;
   }
 
-  // --- POSITION LOGIC ---
-  // If Mobile, target is FINAL_Y_MOBILE. If Desktop, target is FINAL_Y_DESKTOP.
+  // --- Y POSITION LOGIC ---
   const targetY = isMobile ? FINAL_Y_MOBILE : FINAL_Y_DESKTOP;
-
   let calculatedYOffset = INITIAL_Y + (targetY - INITIAL_Y) * easedProgress;
-
   if (isMobile) {
     calculatedYOffset += MOBILE_Y_OFFSET_ADJUSTMENT;
   }
 
-  // --- X POSITION ---
-  const rightPercent = isMobile ? 0 : 50 - 50 * easedProgress;
-  const translateXPercent = isMobile ? 0 : 50 - 50 * easedProgress;
+  // --- X POSITION LOGIC (UPDATED FOR LEFT SIDE) ---
+
+  // 1. Container Position (CSS left)
+  // Hero (Start): 50%
+  // Scrolled (End): 5% (Moves to the left edge)
+  const targetLeft = isMobile ? -10 : 5;
+  const leftPercent = 50 + (targetLeft - 50) * easedProgress;
+
+  // 2. Character Position (CSS transform)
+  // Hero (Start): -50% (Standard centering relative to left: 50%)
+  // Scrolled (End): -25% (Shifts character slightly left within container)
+  const targetTranslateX = isMobile ? 0 : -25;
+  // We interpolate from -50 to targetTranslateX
+  const translateXPercent = -50 + (targetTranslateX - -50) * easedProgress;
 
   const isInHeroSection = scrollY < 100;
-  const sectionData = SECTION_DATA[currentSection % SECTION_DATA.length];
+
+  const sectionData = SECTION_DATA[activeSection % SECTION_DATA.length];
   const handleBubbleClick = () => window.open(sectionData.link, '_blank');
 
   return (
     <div
-      // --- FIXES ---
-      // 1. overflow-visible: Ensures clipping never happens
-      // 2. touch-none: Better mobile scrolling experience
       className={`fixed bottom-0 z-[100] pointer-events-none overflow-visible touch-none
-        ${isMobile ? 'w-[250px]' : 'w-[800px]'}
+        ${isMobile ? 'w-[250px]' : 'w-[450px]'}
       `}
       style={{
-        right: `${rightPercent}%`,
+        // UPDATED: Using 'left' instead of 'right'
+        left: `${leftPercent}%`,
         transform: `translateX(${translateXPercent}%)`,
         height: '100vh',
       }}
@@ -492,7 +516,7 @@ export function RobloxCharacter3D() {
 
           <RobloxNoobCharacter
             scrollY={scrollY}
-            currentSection={currentSection}
+            currentSection={activeSection}
             onBubbleClick={handleBubbleClick}
             bubbleMessage={
               isInHeroSection ? "Hi! I'm Ready." : sectionData.message
