@@ -1,106 +1,58 @@
-"use client"
+'use client';
 
-import { useRef, useEffect, useState, type ReactNode } from "react"
+import type { ReactNode } from 'react';
 
+// --- 1. Static Wrapper (Formerly ParallaxSection) ---
+// We keep the component name so your HomePage code doesn't break,
+// but it now simply renders the children without moving them.
 interface ParallaxSectionProps {
-  children: ReactNode
-  speed?: number
-  className?: string
-  direction?: "up" | "down"
+  children: ReactNode;
+  speed?: number; // Kept for compatibility, but ignored
+  className?: string;
+  direction?: 'up' | 'down'; // Kept for compatibility, but ignored
 }
 
-export function ParallaxSection({ 
-  children, 
-  speed = 0.5, 
-  className = "",
-  direction = "up"
+export function ParallaxSection({
+  children,
+  className = '',
 }: ParallaxSectionProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [offset, setOffset] = useState(0)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (ref.current) {
-        const rect = ref.current.getBoundingClientRect()
-        const windowHeight = window.innerHeight
-        const elementTop = rect.top
-        const elementVisible = elementTop < windowHeight && elementTop > -rect.height
-
-        if (elementVisible) {
-          const scrollProgress = (windowHeight - elementTop) / (windowHeight + rect.height)
-          const parallaxOffset = (scrollProgress - 0.5) * 100 * speed
-          setOffset(direction === "up" ? -parallaxOffset : parallaxOffset)
-        }
-      }
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    handleScroll()
-    
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [speed, direction])
-
-  return (
-    <div ref={ref} className={`relative ${className}`}>
-      <div 
-        style={{ 
-          transform: `translateY(${offset}px)`,
-          transition: "transform 0.1s ease-out"
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
+  return <div className={`relative ${className}`}>{children}</div>;
 }
 
+// --- 2. Static Background (Formerly ParallaxBackground) ---
+// Retains the beautiful gradient and grid visuals, but fixed in place.
 interface ParallaxBackgroundProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
-export function ParallaxBackground({ children, className = "" }: ParallaxBackgroundProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [scrollY, setScrollY] = useState(0)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY)
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
+export function ParallaxBackground({
+  children,
+  className = '',
+}: ParallaxBackgroundProps) {
   return (
-    <div ref={ref} className={`relative overflow-hidden ${className}`}>
-      {/* Parallax gradient layers */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 via-transparent to-neon-pink/20"
-        style={{ transform: `translateY(${scrollY * 0.1}px)` }}
-      />
-      <div 
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(168,85,247,0.15),transparent_50%)]"
-        style={{ transform: `translateY(${scrollY * 0.05}px)` }}
-      />
-      <div 
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(236,72,153,0.15),transparent_50%)]"
-        style={{ transform: `translateY(${-scrollY * 0.08}px)` }}
-      />
-      
-      {/* Floating grid effect */}
-      <div 
-        className="absolute inset-0 opacity-[0.03]"
-        style={{ 
-          backgroundImage: "linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)",
-          backgroundSize: "50px 50px",
-          transform: `translateY(${scrollY * 0.15}px)`
+    <div className={`relative overflow-hidden ${className}`}>
+      {/* Gradient Layer 1 (Purple/Pink Flow) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 via-transparent to-neon-pink/20 pointer-events-none" />
+
+      {/* Gradient Layer 2 (Top Left Glow) */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(168,85,247,0.15),transparent_50%)] pointer-events-none" />
+
+      {/* Gradient Layer 3 (Bottom Right Glow) */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(236,72,153,0.15),transparent_50%)] pointer-events-none" />
+
+      {/* Grid Pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
         }}
       />
-      
-      <div className="relative z-10">
-        {children}
-      </div>
+
+      {/* Content Container */}
+      <div className="relative z-10">{children}</div>
     </div>
-  )
+  );
 }

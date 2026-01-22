@@ -17,32 +17,22 @@ const INITIAL_SCALE = 0.55;
 const FINAL_SCALE = 0.35;
 
 // --- VERTICAL POSITION CONFIG ---
-const INITIAL_Y = -0.8;
+const INITIAL_Y = -1.0;
 const FINAL_Y_DESKTOP = -1.3;
 const FINAL_Y_MOBILE = -0.4;
 
 // --- MOBILE SPECIFIC CONFIG ---
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_SCALE_MULTIPLIER = 0.35;
+const MOBILE_SCALE_MULTIPLIER = 0.45;
 const MOBILE_Y_OFFSET_ADJUSTMENT = -0.3;
 
-// Easing
+// Easing Function
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 
 // --- SECTION DATA ---
 const SECTION_DATA = [
-  {
-    message: "Hi! I'm Ready.",
-    pose: 'idle',
-    face: 'happy',
-    link: '',
-  },
-  {
-    message: 'Check this out!',
-    pose: 'jump',
-    face: 'excited',
-    link: '',
-  },
+  { message: "Hi! I'm Sabbz.", pose: 'idle', face: 'happy', link: '' },
+  { message: 'Check this out!', pose: 'jump', face: 'excited', link: '' },
   {
     message: 'Can you beat me?',
     pose: 'confident',
@@ -53,14 +43,9 @@ const SECTION_DATA = [
     message: "Let's connect!",
     pose: 'wave',
     face: 'wink',
-    link: 'https://x.com/yourhandle',
+    link: 'https://x.com/afsdev9',
   },
-  {
-    message: 'Hire me now.',
-    pose: 'confident',
-    face: 'confident',
-    link: '',
-  },
+  { message: 'Hire me now.', pose: 'confident', face: 'confident', link: '' },
 ];
 
 const COLORS = {
@@ -72,6 +57,7 @@ const COLORS = {
   mouth: '#1a1a1a',
 };
 
+// --- INNER CHARACTER COMPONENT ---
 function RobloxNoobCharacter({
   scrollY,
   currentSection,
@@ -81,16 +67,7 @@ function RobloxNoobCharacter({
   yOffset,
   forceWave = false,
   showBubble = true,
-}: {
-  scrollY: number;
-  currentSection: number;
-  onBubbleClick: () => void;
-  bubbleMessage: string;
-  characterScale: number;
-  yOffset: number;
-  forceWave?: boolean;
-  showBubble?: boolean;
-}) {
+}: any) {
   const groupRef = useRef<THREE.Group>(null);
   const { mouse } = useThree();
 
@@ -111,7 +88,7 @@ function RobloxNoobCharacter({
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Mouse Tracking
+    // 1. Mouse Tracking
     const targetRotX = Math.max(-0.3, Math.min(0.3, -mouse.y * 0.5));
     const targetRotY = Math.max(-0.6, Math.min(0.6, mouse.x * 0.8));
     const floatRot = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
@@ -127,7 +104,7 @@ function RobloxNoobCharacter({
       delta * 5,
     );
 
-    // Face Morphing
+    // 2. Face Morphing
     let tLeftEye = { scale: [1, 1, 1] };
     let tRightEye = { scale: [1, 1, 1] };
     let tMouth = { scale: [1, 1, 1], rotZ: 0, rotX: 0 };
@@ -199,7 +176,7 @@ function RobloxNoobCharacter({
       );
     }
 
-    // Arm Poses
+    // 3. Arm Poses
     let tLeftArm = -0.1;
     let tRightArm = 0.1;
     let tBodyTilt = 0;
@@ -236,7 +213,7 @@ function RobloxNoobCharacter({
       rightShoulderRef.current.rotation.x = -0.15;
     }
 
-    // Hover Physics
+    // 4. Hover Physics
     const hoverAmplitude = 0.15;
     const hoverSpeed = 1.5;
     const constantFloat =
@@ -255,6 +232,7 @@ function RobloxNoobCharacter({
       delta * 3,
     );
 
+    // 5. Aura Light
     if (auraLightRef.current) {
       const targetIntensity =
         face === 'confident'
@@ -333,6 +311,7 @@ function RobloxNoobCharacter({
           </group>
         )}
 
+        {/* Character Parts */}
         <RoundedBox
           args={[1.1, 1.1, 1.1]}
           radius={0.15}
@@ -371,6 +350,7 @@ function RobloxNoobCharacter({
         >
           <meshStandardMaterial color={COLORS.torso} />
         </RoundedBox>
+
         <group ref={leftShoulderRef} position={[-0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
@@ -388,6 +368,7 @@ function RobloxNoobCharacter({
             )}
           </mesh>
         </group>
+
         <group ref={rightShoulderRef} position={[0.85, 0.9, 0]}>
           <mesh position={[0, -0.55, 0]}>
             <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
@@ -405,6 +386,7 @@ function RobloxNoobCharacter({
             )}
           </mesh>
         </group>
+
         <RoundedBox
           args={[0.5, 1.1, 0.5]}
           radius={0.06}
@@ -426,6 +408,7 @@ function RobloxNoobCharacter({
   );
 }
 
+// --- MAIN EXPORTED COMPONENT ---
 export function RobloxCharacter3D({
   activeSection = 0,
 }: {
@@ -435,13 +418,9 @@ export function RobloxCharacter3D({
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    const handleResize = () => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    const handleResize = () =>
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', handleResize);
@@ -473,35 +452,34 @@ export function RobloxCharacter3D({
     calculatedYOffset += MOBILE_Y_OFFSET_ADJUSTMENT;
   }
 
-  // --- X POSITION LOGIC (UPDATED FOR LEFT SIDE) ---
+  // --- HORIZONTAL (X) POSITION LOGIC ---
 
-  // 1. Container Position (CSS left)
-  // Hero (Start): 50%
-  // Scrolled (End): 5% (Moves to the left edge)
-  const targetLeft = isMobile ? -10 : 5;
-  const leftPercent = 50 + (targetLeft - 50) * easedProgress;
+  // 1. Start Position (Desktop)
+  // 75% places it perfectly in the center of the right half of the screen
+  const startLeft = isMobile ? 50 : 75;
 
-  // 2. Character Position (CSS transform)
-  // Hero (Start): -50% (Standard centering relative to left: 50%)
-  // Scrolled (End): -25% (Shifts character slightly left within container)
-  const targetTranslateX = isMobile ? 0 : -25;
-  // We interpolate from -50 to targetTranslateX
-  const translateXPercent = -50 + (targetTranslateX - -50) * easedProgress;
+  // 2. End Position (Desktop)
+  // CHANGED: Increased from 5 to 15.
+  // 15% places it safely in the left sidebar area without cutting it off.
+  const endLeft = isMobile ? 25 : 10;
 
+  const leftPercent = startLeft + (endLeft - startLeft) * easedProgress;
   const isInHeroSection = scrollY < 100;
-
   const sectionData = SECTION_DATA[activeSection % SECTION_DATA.length];
-  const handleBubbleClick = () => window.open(sectionData.link, '_blank');
+
+  const handleBubbleClick = () => {
+    if (sectionData.link) window.open(sectionData.link, '_blank');
+  };
 
   return (
     <div
-      className={`fixed bottom-0 z-[100] pointer-events-none overflow-visible touch-none
-        ${isMobile ? 'w-[250px]' : 'w-[450px]'}
+      className={`fixed bottom-0 z-[100] pointer-events-none overflow-visible touch-none transition-width duration-300
+        ${isMobile ? 'w-[250px]' : 'w-[500px]'}
       `}
       style={{
-        // UPDATED: Using 'left' instead of 'right'
         left: `${leftPercent}%`,
-        transform: `translateX(${translateXPercent}%)`,
+        // Translate -50% ensures the div is always centered on the specific % point
+        transform: `translateX(-50%)`,
         height: '100vh',
       }}
     >

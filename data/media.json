@@ -1,34 +1,18 @@
 [
   {
     "id": "1",
-    "type": "video",
-    "thumbnail": "/images/media-1.jpg",
-    "title": "Ability System Showcase",
-    "description": "Demonstrating the custom ability framework with particle effects and animations",
-    "date": "2025-12-15"
+    "tweetId": "2007457606915502198" 
   },
   {
     "id": "2",
-    "type": "video",
-    "thumbnail": "/images/media-2.jpg",
-    "title": "Vehicle Physics Demo",
-    "description": "Custom raycast suspension and drift mechanics in action",
-    "date": "2025-11-28"
+    "tweetId": "2010714606675910694"
   },
   {
     "id": "3",
-    "type": "video",
-    "thumbnail": "/images/media-3.jpg",
-    "title": "AI Pathfinding Visualization",
-    "description": "Debug view of the A* pathfinding system for tower defense enemies",
-    "date": "2025-11-10"
+    "tweetId": "1987219128047095836"
   },
   {
     "id": "4",
-    "type": "video",
-    "thumbnail": "/images/media-4.jpg",
-    "title": "Building System Preview",
-    "description": "Grid snapping and structural integrity checks for the survival game",
-    "date": "2025-10-22"
+    "tweetId": "1947688094431645752"
   }
 ]

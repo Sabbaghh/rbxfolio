@@ -1,124 +1,95 @@
-"use client"
+'use client';
 
-import { useRef } from "react"
-import Image from "next/image"
-import { ChevronLeft, ChevronRight, Play, ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useRef } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tweet } from 'react-tweet';
+
+// Custom components to style the tweet to match your app's "Neon" vibe
+// (react-tweet allows replacing internal parts if needed, but the default is usually great)
 
 interface MediaItem {
-  id: string
-  type: string
-  thumbnail: string
-  title: string
-  description: string
-  date: string
+  id: string;
+  tweetId: string;
 }
 
 interface MediaCarouselProps {
-  items: MediaItem[]
+  items: MediaItem[];
 }
 
 export function MediaCarousel({ items }: MediaCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (direction: "left" | "right") => {
+  const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 320
+      const scrollAmount = 400; // Tweets are a bit wider
       scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      })
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
     }
-  }
+  };
 
   return (
-    <div className="relative group">
-      {/* Scroll buttons */}
+    <div className="relative group w-full">
+      {/* --- Scroll Buttons --- */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2 hover:bg-background"
-        onClick={() => scroll("left")}
-        aria-label="Scroll left"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2 hover:bg-background border border-border"
+        onClick={() => scroll('left')}
       >
         <ChevronLeft className="h-5 w-5" />
       </Button>
-      
+
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity translate-x-1/2 hover:bg-background"
-        onClick={() => scroll("right")}
-        aria-label="Scroll right"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity translate-x-1/2 hover:bg-background border border-border"
+        onClick={() => scroll('right')}
       >
         <ChevronRight className="h-5 w-5" />
       </Button>
 
-      {/* Carousel */}
+      {/* --- Carousel Container --- */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-8 pt-2 px-4 items-start"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {items.map((item) => (
           <div
             key={item.id}
-            className="flex-shrink-0 w-72 snap-start group/card"
+            className="flex-shrink-0 w-[350px] md:w-[400px] snap-center"
           >
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-card border border-border transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20">
-              <Image
-                src={item.thumbnail || "/placeholder.svg"}
-                alt={item.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover/card:scale-110"
-              />
-              
-              {/* Play overlay */}
-              <div className="absolute inset-0 bg-background/40 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center">
-                  <Play className="h-6 w-6 text-primary-foreground ml-1" />
-                </div>
-              </div>
-              
-              {/* Video badge */}
-              <div className="absolute top-2 left-2 px-2 py-1 rounded bg-background/80 backdrop-blur-sm text-xs font-medium text-foreground">
-                Video
-              </div>
-            </div>
-            
-            <div className="mt-3">
-              <h4 className="font-semibold text-foreground line-clamp-1 group-hover/card:text-primary transition-colors">
-                {item.title}
-              </h4>
-              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                {item.description}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                {new Date(item.date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+            {/* We wrap the Tweet in a div with 'light' or 'dark' class 
+               to force the theme if your website uses a specific class strategy.
+               Since your site is dark, we ensure the wrapper supports it.
+            */}
+            <div className="tweet-container-dark">
+              <Tweet id={item.tweetId} />
             </div>
           </div>
         ))}
-        
-        {/* View more card */}
+
+        {/* --- View More Card --- */}
         <a
-          href="https://x.com"
+          href="https://x.com/afsdev9"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-shrink-0 w-72 snap-start"
+          className="flex-shrink-0 w-[300px] snap-center flex flex-col"
         >
-          <div className="aspect-video rounded-xl overflow-hidden bg-secondary/50 border border-border transition-all hover:border-primary/50 hover:bg-secondary flex items-center justify-center">
-            <div className="text-center">
-              <ExternalLink className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <span className="text-sm font-medium text-foreground">View more on X</span>
+          {/* Aligned height visually with typical tweet height */}
+          <div className="h-[400px] w-full rounded-xl overflow-hidden bg-secondary/30 border border-border transition-all hover:border-primary/50 hover:bg-secondary/50 flex flex-col items-center justify-center gap-4 group/more">
+            <div className="p-4 rounded-full bg-background border border-border group-hover/more:scale-110 transition-transform duration-300">
+              <ExternalLink className="h-8 w-8 text-foreground" />
             </div>
+            <span className="text-sm font-medium text-foreground">
+              View more on X
+            </span>
           </div>
         </a>
       </div>
     </div>
-  )
+  );
 }
