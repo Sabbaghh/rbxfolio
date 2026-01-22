@@ -258,14 +258,14 @@ export default function HomePage() {
           className="py-16 md:py-24 bg-secondary/30 border-y border-border"
         >
           <div className="container mx-auto px-4">
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Try My Skills
+                Beat me if you can!
               </h2>
               <p className="text-muted-foreground mt-1">
                 A mini-game showcasing game logic, physics, and input handling
               </p>
-            </div>
+            </div> */}
 
             <div className="max-w-4xl mx-auto">
               <MiniGame />
