@@ -131,7 +131,7 @@ export default function RootLayout({
     description:
       'Professional Roblox scripter specializing in frontend development with expertise in popular games like Adopt Me, Blox Fruits, Brookhaven, and Pet Simulator X',
     url: 'https://sabbz.xyz',
-    sameAs: ['https://x.com/sabbz2z', 'https://discord.gg/DRevBgGG'],
+    sameAs: ['https://x.com/sabbz2z', 'https://discord.gg/GUNSxedU'],
     knowsAbout: [
       'Roblox Development',
       'Luau Programming',

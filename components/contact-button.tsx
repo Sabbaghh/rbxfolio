@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export function ContactButton() {
   return (
     <a
-      href="https://discord.gg/DRevBgGG"
+      href="https://discord.gg/GUNSxedU"
       target="_blank"
       rel="noopener noreferrer"
     >
