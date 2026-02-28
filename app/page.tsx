@@ -170,7 +170,7 @@ export default function HomePage() {
                     {[
                       { icon: Code2, label: 'Games', value: '7+' },
                       { icon: Users, label: 'Visits', value: '55M+' },
-                      { icon: Sparkles, label: 'Years', value: '6+' },
+                      { icon: Sparkles, label: 'Years', value: '1+' },
                     ].map((stat, index) => (
                       <ParallaxSection
                         key={stat.label}
