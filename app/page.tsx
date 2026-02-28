@@ -133,7 +133,7 @@ export default function HomePage() {
                     {/* --- Social Buttons Added Here --- */}
                     <div className="flex items-center gap-2">
                       <a
-                        href="https://x.com/afsdev9" // Update with your actual link
+                        href="https://x.com/sabbz2z" // Update with your actual link
                         target="_blank"
                         rel="noopener noreferrer"
                       >

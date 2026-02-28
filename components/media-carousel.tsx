@@ -74,7 +74,7 @@ export function MediaCarousel({ items }: MediaCarouselProps) {
 
         {/* --- View More Card --- */}
         <a
-          href="https://x.com/afsdev9"
+          href="https://x.com/sabbz2z"
           target="_blank"
           rel="noopener noreferrer"
           className="flex-shrink-0 w-[300px] snap-center flex flex-col"

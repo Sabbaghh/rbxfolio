@@ -43,7 +43,7 @@ const SECTION_DATA = [
     message: "Let's connect!",
     pose: 'wave',
     face: 'wink',
-    link: 'https://x.com/afsdev9',
+    link: 'https://x.com/sabbz2z',
   },
   { message: 'Hire me now.', pose: 'confident', face: 'confident', link: '' },
 ];

@@ -33,7 +33,7 @@ export function Header() {
           {/* Navigation */}
           <nav className="flex items-center gap-2 sm:gap-3">
             <a
-              href="https://x.com/afsdev9"
+              href="https://x.com/sabbz2z"
               target="_blank"
               rel="noopener noreferrer"
             >

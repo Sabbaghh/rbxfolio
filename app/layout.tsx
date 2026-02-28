@@ -15,7 +15,8 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: 'Sabbz - Roblox Scripter Portfolio | Devx #Roblox #robloxDev #robloxDevx',
+  title:
+    'Sabbz - Roblox Scripter Portfolio | Devx #Roblox #robloxDev #robloxDevx',
   description:
     'Professional Roblox scripter specializing in frontend development. Creator of Kraken Game, One of Us, and Stop The Timer. Expert in Adopt Me, Brookhaven, Blox Fruits, Pet Simulator X, and Tower of Hell style games. #Roblox #robloxDev #robloxDevx Devx',
   keywords: [
@@ -77,8 +78,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@afsdev9',
-    creator: '@afsdev9',
+    site: '@sabbz2z',
+    creator: '@sabbz2z',
     title: 'Sabbz - Roblox Scripter | Devx #Roblox #robloxDev',
     description:
       'Professional Roblox developer with 55M+ visits. Expert in Adopt Me, Blox Fruits, Brookhaven style games. #Roblox #robloxDev #robloxDevx',
@@ -130,10 +131,7 @@ export default function RootLayout({
     description:
       'Professional Roblox scripter specializing in frontend development with expertise in popular games like Adopt Me, Blox Fruits, Brookhaven, and Pet Simulator X',
     url: 'https://sabbz.xyz',
-    sameAs: [
-      'https://x.com/afsdev9',
-      'https://discord.gg/DRevBgGG',
-    ],
+    sameAs: ['https://x.com/sabbz2z', 'https://discord.gg/DRevBgGG'],
     knowsAbout: [
       'Roblox Development',
       'Luau Programming',
