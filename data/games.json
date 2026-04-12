@@ -1,12 +1,21 @@
 [
+   {
+    "id": "Power Simulator X",
+    "title": "Power Simulator X",
+    "studio": "Power Simulator X",
+    "thumbnail": "/images/powersim.webp",
+    "link": "https://www.roblox.com/games/139862517286509/Power-Simulator-X",
+    "peakCCU": "New Release",
+    "visits": "New Release"
+  },
   {
-    "id": "Kraken-Game",
-    "title": "Kraken Game",
-    "studio": "DTP Trends",
-    "thumbnail": "/images/Kraken.webp",
-    "link": "https://www.roblox.com/games/106159203290418/Kraken-Game",
-    "peakCCU": "22,000",
-    "visits": "13M+"
+    "id": "Dodgeball",
+    "title": "Dodgeball",
+    "studio": "Dodgeballing",
+    "thumbnail": "/images/Dodgeball.webp",
+    "link": "https://www.roblox.com/games/76469560314137/Dodgeball",
+    "peakCCU": "2500",
+    "visits": "6.2M+"
   },
   {
     "id": "OneofUs",
@@ -17,7 +26,24 @@
     "peakCCU": "10,000",
     "visits": "40.0M+"
   },
-  {
+ 
+   {
+    "id": "Kraken-Game",
+    "title": "Kraken Game",
+    "studio": "DTP Trends",
+    "thumbnail": "/images/Kraken.webp",
+    "link": "https://www.roblox.com/games/106159203290418/Kraken-Game",
+    "peakCCU": "22,000",
+    "visits": "13M+"
+  },  {
+    "id": "BuildaBridgetoBecomeSniper",
+    "title": "Build a Bridge to Become Sniper",
+    "studio": "Can’t stop driving",
+    "thumbnail": "/images/Sniper.webp",
+    "link": "https://www.roblox.com/games/127364241509157/Build-a-Bridge-to-Become-Sniper",
+    "peakCCU": "150",
+    "visits": "150.5K+"
+  }, {
     "id": "Stop-The-Timer",
     "title": "Stop The Timer!",
     "studio": "Cook Food",
@@ -26,4 +52,5 @@
     "peakCCU": "2,000",
     "visits": "3.8M+"
   }
+
 ]

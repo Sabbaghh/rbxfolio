@@ -47,7 +47,7 @@ export function Header() {
               </Button>
             </a>
             <a
-              href="https://discord.gg/GUNSxedU"
+              href="https://discord.com/users/759498023453196308"
               target="_blank"
               rel="noopener noreferrer"
             >

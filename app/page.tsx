@@ -147,7 +147,7 @@ export default function HomePage() {
                         </Button>
                       </a>
                       <a
-                        href="https://discord.gg/GUNSxedU" // Update with your actual link
+                        href="https://discord.com/users/759498023453196308" // Update with your actual link
                         target="_blank"
                         rel="noopener noreferrer"
                       >
