@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s \"https://apis.roblox.com/universes/v1/places/137533474840546/universe\")",
+      "Bash(curl -s \"https://games.roblox.com/v1/games?universeIds=10061909806\")",
+      "Bash(curl -s \"https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=10061909806&size=768x432&format=Png&countPerUniverse=1\")",
+      "Bash(node -e \"const id='2050198557659971812'; const t=\\(\\(Number\\(id\\)/1e15\\)*Math.PI\\).toString\\(36\\).replace\\(/\\(0+|\\\\.\\)/g,''\\); console.log\\('token:',t\\); console.log\\('url: https://cdn.syndication.twimg.com/tweet-result?id='+id+'&token='+t+'&lang=en'\\);\")",
+      "Bash(curl -s -o NUL -w \"%{http_code}\\\\n\" \"https://cdn.syndication.twimg.com/tweet-result?id=2050198557659971812&token=4ywvzsgbyo&lang=en\")",
+      "Bash(curl -s \"https://cdn.syndication.twimg.com/tweet-result?id=2050198557659971812&token=4ywvzsgbyo&lang=en\")",
+      "Bash(node -e \"const p=require.resolve\\('react-tweet'\\); console.log\\(p\\);\")",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('react-tweet'\\)\\)\\);\")",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('react-tweet/package.json'\\).exports, null, 2\\)\\);\")"
+    ]
+  }
+}

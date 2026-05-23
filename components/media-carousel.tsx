@@ -1,12 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tweet } from 'react-tweet';
-
-// Custom components to style the tweet to match your app's "Neon" vibe
-// (react-tweet allows replacing internal parts if needed, but the default is usually great)
+import { EmbeddedTweet, TweetSkeleton } from 'react-tweet';
+import type { Tweet } from 'react-tweet/api';
 
 interface MediaItem {
   id: string;
@@ -15,6 +13,60 @@ interface MediaItem {
 
 interface MediaCarouselProps {
   items: MediaItem[];
+}
+
+function NormalizedTweet({ id }: { id: string }) {
+  const [tweet, setTweet] = useState<Tweet | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/tweet/${id}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: Tweet) => {
+        if (!cancelled) setTweet(data);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (failed) throw new Error('tweet load failed');
+  if (!tweet) return <TweetSkeleton />;
+  return <EmbeddedTweet tweet={tweet} />;
+}
+
+class TweetErrorBoundary extends Component<
+  { children: ReactNode; tweetId: string },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <a
+          href={`https://x.com/i/status/${this.props.tweetId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-[400px] w-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-secondary/30 p-6 text-center transition-all hover:border-primary/50 hover:bg-secondary/50"
+        >
+          <ExternalLink className="h-6 w-6 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            Tweet unavailable — view on X
+          </span>
+        </a>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 export function MediaCarousel({ items }: MediaCarouselProps) {
@@ -62,13 +114,11 @@ export function MediaCarousel({ items }: MediaCarouselProps) {
             key={item.id}
             className="flex-shrink-0 w-[350px] md:w-[400px] snap-center"
           >
-            {/* We wrap the Tweet in a div with 'light' or 'dark' class 
-               to force the theme if your website uses a specific class strategy.
-               Since your site is dark, we ensure the wrapper supports it.
-            */}
-            <div className="tweet-container-dark">
-              <Tweet id={item.tweetId} />
-            </div>
+            <TweetErrorBoundary tweetId={item.tweetId}>
+              <div className="tweet-container-dark">
+                <NormalizedTweet id={item.tweetId} />
+              </div>
+            </TweetErrorBoundary>
           </div>
         ))}
 

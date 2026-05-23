@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'abs.twimg.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.rbxcdn.com',
+      },
     ],
   },
 };

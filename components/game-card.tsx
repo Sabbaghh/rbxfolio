@@ -4,12 +4,12 @@ import Image from 'next/image';
 import { Users, Eye } from 'lucide-react'; // Icons for stats
 
 interface GameCardProps {
-  title: string;
-  studio: string;
-  thumbnail: string;
   link: string;
-  peakCCU: string;
-  visits: string;
+  title?: string;
+  studio?: string;
+  thumbnail?: string;
+  peakCCU?: string;
+  visits?: string;
 }
 
 export function GameCard({
@@ -20,6 +20,10 @@ export function GameCard({
   peakCCU,
   visits,
 }: GameCardProps) {
+  const displayTitle = title || 'Loading…';
+  const displayStudio = studio || '—';
+  const displayCCU = peakCCU || '—';
+  const displayVisits = visits || '—';
   const handleClick = () => {
     window.open(link, '_blank');
   };
@@ -33,7 +37,7 @@ export function GameCard({
       <div className="relative aspect-video w-full overflow-hidden">
         <Image
           src={thumbnail || '/placeholder.svg'}
-          alt={title}
+          alt={displayTitle}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
@@ -45,9 +49,9 @@ export function GameCard({
       <div className="p-4 relative">
         <div className="mb-3">
           <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-            {title}
+            {displayTitle}
           </h3>
-          <p className="text-sm text-muted-foreground">{studio}</p>
+          <p className="text-sm text-muted-foreground">{displayStudio}</p>
         </div>
 
         {/* Stats Row */}
@@ -55,13 +59,13 @@ export function GameCard({
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-neon-blue" />
             <span>
-              Peak: <span className="text-foreground">{peakCCU}</span>
+              Now: <span className="text-foreground">{displayCCU}</span>
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <Eye className="w-3.5 h-3.5 text-neon-pink" />
             <span>
-              Visits: <span className="text-foreground">{visits}</span>
+              Visits: <span className="text-foreground">{displayVisits}</span>
             </span>
           </div>
         </div>

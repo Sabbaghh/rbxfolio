@@ -33,20 +33,52 @@ function DiscordIcon({ className }: { className?: string }) {
   );
 }
 
-// Interface matches your new data structure
 interface Game {
   id: string;
-  title: string;
-  studio: string;
-  thumbnail: string;
   link: string;
-  peakCCU: string;
-  visits: string;
+  title?: string;
+  studio?: string;
+  thumbnail?: string;
+  peakCCU?: string;
+  visits?: string;
+  visitsRaw?: number;
 }
+
+function formatTotalVisits(n: number): string {
+  if (n >= 1_000_000) return `${Math.floor(n / 1_000_000)}M+`;
+  if (n >= 1_000) return `${Math.floor(n / 1_000)}K+`;
+  return `${n}`;
+}
+
+function parseStat(value: string | undefined): number {
+  if (!value) return 0;
+  const n = parseInt(value.replace(/[^\d]/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const sortedFallback = [...(gamesData as Game[])].sort(
+  (a, b) => parseStat(b.visits) - parseStat(a.visits),
+);
 
 export default function HomePage() {
   // --- SECTION TRACKING ---
   const [activeSection, setActiveSection] = useState(0);
+  const [games, setGames] = useState<Game[]>(sortedFallback);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/games')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Game[] | null) => {
+        if (!cancelled && data) setGames(data);
+      })
+      .catch(() => {
+        // keep static fallback
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Refs for tracking visibility
   const heroRef = useRef<HTMLDivElement>(null);
@@ -168,9 +200,19 @@ export default function HomePage() {
                 <div className="mt-12 pt-8 border-t border-border/50">
                   <div className="grid grid-cols-3 gap-6">
                     {[
-                      { icon: Code2, label: 'Games', value: '7+' },
-                      { icon: Users, label: 'Visits', value: '55M+' },
-                      { icon: Sparkles, label: 'Years', value: '1+' },
+                      {
+                        icon: Code2,
+                        label: 'Games',
+                        value: `${games.length}+`,
+                      },
+                      {
+                        icon: Users,
+                        label: 'Visits',
+                        value: formatTotalVisits(
+                          games.reduce((sum, g) => sum + (g.visitsRaw ?? 0), 0),
+                        ),
+                      },
+                      { icon: Sparkles, label: 'Years', value: '2+' },
                     ].map((stat, index) => (
                       <ParallaxSection
                         key={stat.label}
@@ -223,12 +265,11 @@ export default function HomePage() {
             </ParallaxSection>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(gamesData as Game[]).map((game, index) => (
+              {games.map((game, index) => (
                 <ParallaxSection
                   key={game.id}
                   speed={0.03 + (index % 3) * 0.02}
                 >
-                  {/* No onClick needed, GameCard handles the link internally now */}
                   <GameCard {...game} />
                 </ParallaxSection>
               ))}
