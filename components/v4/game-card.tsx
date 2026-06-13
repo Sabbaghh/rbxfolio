@@ -54,9 +54,6 @@ export function GameCardV4({
           <span>
             VISITS <span className="text-white/85">{visits || '—'}</span>
           </span>
-          <span className="text-red-500/80 opacity-0 group-hover:opacity-100 transition-opacity">
-            OPEN ▸
-          </span>
         </div>
       </div>
 

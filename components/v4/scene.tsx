@@ -106,10 +106,10 @@ function restCamera(
   if (kf.rest.mode === 'face') {
     outCam
       .copy(av)
-      .addScaledVector(front(kf.rotY), 1.6)
-      .addScaledVector(right(kf.rotY), 0.3)
-      .add(new THREE.Vector3(0, 1.85, 0));
-    outTgt.copy(av).add(new THREE.Vector3(0, 1.8, 0));
+      .addScaledVector(front(kf.rotY), 2.6)
+      .addScaledVector(right(kf.rotY), 0.45)
+      .add(new THREE.Vector3(0, 1.7, 0));
+    outTgt.copy(av).add(new THREE.Vector3(0, 1.5, 0));
   } else if (kf.rest.mode === 'orbit') {
     const ang = time * 0.22;
     outCam
@@ -201,12 +201,7 @@ function Director({
     // Avatar path
     const tAv = new THREE.Vector3(...a.av).lerp(new THREE.Vector3(...b.av), e);
     const tRotY = THREE.MathUtils.lerp(a.rotY, b.rotY, e);
-
-    // Glide (not walk) while flying from the deck to the planet
-    let forcedPose: AvatarPose | null = null;
-    if (i === KEYFRAMES.length - 2 && local > 0.04 && local < 0.93) {
-      forcedPose = 'float';
-    }
+    const forcedPose: AvatarPose | null = null;
 
     // Rest cameras for both keyframes, blended across the segment
     restCamera(a, time, cur.restA, cur.tgtA);
