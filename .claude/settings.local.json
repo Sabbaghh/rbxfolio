@@ -11,7 +11,14 @@
       "Bash(curl -s \"https://cdn.syndication.twimg.com/tweet-result?id=2050198557659971812&token=4ywvzsgbyo&lang=en\")",
       "Bash(node -e \"const p=require.resolve\\('react-tweet'\\); console.log\\(p\\);\")",
       "Bash(node -e \"console.log\\(Object.keys\\(require\\('react-tweet'\\)\\)\\);\")",
-      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('react-tweet/package.json'\\).exports, null, 2\\)\\);\")"
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('react-tweet/package.json'\\).exports, null, 2\\)\\);\")",
+      "PowerShell(node -e \"fetch\\('https://thumbnails.roblox.com/v1/users/avatar-3d?userId=6079049520'\\).then\\(r=>r.text\\(\\)\\).then\\(t=>console.log\\(t\\)\\).catch\\(e=>console.error\\(e\\)\\)\")",
+      "PowerShell(node -e \"fetch\\('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=6079049520&size=48x48&format=Png'\\).then\\(r=>r.text\\(\\)\\).then\\(t=>console.log\\(t\\)\\).catch\\(e=>console.error\\(e\\)\\)\")",
+      "mcp__robloxstudio__get_place_info",
+      "PowerShell(Get-ChildItem \"app\\\\avatar\" | Select-Object Name, @{N='KB';E={[math]::Round\\($_.Length/1KB\\)}}; Select-String -Path \"app\\\\avatar\\\\Sabbz2z.obj\" -Pattern \"^\\(o |g |usemtl \\)\" | Select-Object -First 60 | ForEach-Object { $_.Line })",
+      "PowerShell(Get-Location; Get-ChildItem \"c:\\\\Users\\\\afsab\\\\OneDrive\\\\Desktop\\\\rbxfolio\\\\app\\\\avatar\" | Select-Object Name, @{N='KB';E={[math]::Round\\($_.Length/1KB\\)}} | Format-Table -AutoSize | Out-String)",
+      "Bash(npm install *)",
+      "Bash(npx gltf-transform *)"
     ]
   }
 }

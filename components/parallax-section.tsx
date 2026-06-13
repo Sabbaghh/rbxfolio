@@ -1,6 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+
+const HeroBackground3D = dynamic(
+  () =>
+    import('@/components/hero-background-3d').then((m) => m.HeroBackground3D),
+  { ssr: false },
+);
 
 // --- 1. Static Wrapper (Formerly ParallaxSection) ---
 // We keep the component name so your HomePage code doesn't break,
@@ -32,6 +39,9 @@ export function ParallaxBackground({
 }: ParallaxBackgroundProps) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
+      {/* 3D Scene (grid, floating blocks, bloom) */}
+      <HeroBackground3D />
+
       {/* Gradient Layer 1 (Purple/Pink Flow) */}
       <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 via-transparent to-neon-pink/20 pointer-events-none" />
 
@@ -40,16 +50,6 @@ export function ParallaxBackground({
 
       {/* Gradient Layer 3 (Bottom Right Glow) */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(236,72,153,0.15),transparent_50%)] pointer-events-none" />
-
-      {/* Grid Pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-        }}
-      />
 
       {/* Content Container */}
       <div className="relative z-10">{children}</div>

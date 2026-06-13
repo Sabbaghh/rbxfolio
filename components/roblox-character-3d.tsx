@@ -1,15 +1,17 @@
 'use client';
 
-import { useRef, useEffect, useState, Suspense } from 'react';
+import { useRef, useEffect, useState, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Environment,
   RoundedBox,
   Text,
-  Trail,
   Sparkles,
+  useGLTF,
+  ContactShadows,
 } from '@react-three/drei';
 import * as THREE from 'three';
+import { buildRig, normalizeRig } from '@/components/avatar-rig';
 
 // --- CONFIGURATION ---
 const SCROLL_ANIMATION_END = 400;
@@ -26,40 +28,30 @@ const MOBILE_BREAKPOINT = 768;
 const MOBILE_SCALE_MULTIPLIER = 0.45;
 const MOBILE_Y_OFFSET_ADJUSTMENT = -0.3;
 
+// --- MODEL NORMALIZATION ---
+// Normalized so the avatar matches the old procedural character's extents:
+// feet at y=-1.3, total height 3.4 units.
+const MODEL_HEIGHT = 3.4;
+const MODEL_FOOT_Y = -1.3;
+// Flip if the exported model faces away from the camera.
+const MODEL_FACING_Y = Math.PI;
+
+const AVATAR_URL = '/avatar.glb';
+
 // Easing Function
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 
 // --- SECTION DATA ---
 const SECTION_DATA = [
-  { message: "Hi! I'm Sabbz.", pose: 'idle', face: 'happy', link: '' },
-  { message: 'Check this out!', pose: 'jump', face: 'excited', link: '' },
-  {
-    message: 'Can you beat me?',
-    pose: 'confident',
-    face: 'super-excited',
-    link: '',
-  },
-  {
-    message: "Let's connect!",
-    pose: 'wave',
-    face: 'wink',
-    link: 'https://x.com/sabbz2z',
-  },
-  { message: 'Hire me now.', pose: 'confident', face: 'confident', link: '' },
+  { message: "Hi! I'm Sabbz.", pose: 'idle', link: '' },
+  { message: 'Check this out!', pose: 'jump', link: '' },
+  { message: 'Can you beat me?', pose: 'confident', link: '' },
+  { message: "Let's connect!", pose: 'wave', link: 'https://x.com/sabbz2z' },
+  { message: 'Hire me now.', pose: 'confident', link: '' },
 ];
 
-const COLORS = {
-  head: '#f5c842',
-  torso: '#4a7ebf',
-  arms: '#f5c842',
-  legs: '#8a9a5b',
-  eyes: '#1a1a1a',
-  mouth: '#1a1a1a',
-};
-
 // --- INNER CHARACTER COMPONENT ---
-function RobloxNoobCharacter({
-  scrollY,
+function SabbzAvatar({
   currentSection,
   onBubbleClick,
   bubbleMessage,
@@ -67,31 +59,42 @@ function RobloxNoobCharacter({
   yOffset,
   forceWave = false,
   showBubble = true,
-}: any) {
+}: {
+  currentSection: number;
+  onBubbleClick: () => void;
+  bubbleMessage: string;
+  characterScale: number;
+  yOffset: number;
+  forceWave?: boolean;
+  showBubble?: boolean;
+}) {
+  const { scene } = useGLTF(AVATAR_URL);
   const groupRef = useRef<THREE.Group>(null);
   const { mouse } = useThree();
-
-  const leftEyeRef = useRef<THREE.Mesh>(null);
-  const rightEyeRef = useRef<THREE.Mesh>(null);
-  const leftBrowRef = useRef<THREE.Mesh>(null);
-  const rightBrowRef = useRef<THREE.Mesh>(null);
-  const mouthRef = useRef<THREE.Group>(null);
-  const leftShoulderRef = useRef<THREE.Group>(null);
-  const rightShoulderRef = useRef<THREE.Group>(null);
   const auraLightRef = useRef<THREE.PointLight>(null);
+  const [, setIsHovered] = useState(false);
+
+  const rig = useMemo(() => {
+    const built = buildRig(scene);
+    const wrapper = normalizeRig(built, {
+      height: MODEL_HEIGHT,
+      footY: MODEL_FOOT_Y,
+      facingY: MODEL_FACING_Y,
+    });
+    return { ...built, wrapper };
+  }, [scene]);
 
   const currentData = SECTION_DATA[currentSection % SECTION_DATA.length];
   const pose = forceWave ? 'wave' : currentData.pose;
-  const face = forceWave ? 'happy' : currentData.face;
-  const [, setIsHovered] = useState(false);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
+    const t = state.clock.elapsedTime;
 
-    // 1. Mouse Tracking
-    const targetRotX = Math.max(-0.3, Math.min(0.3, -mouse.y * 0.5));
+    // 1. Mouse Tracking (whole body)
+    const targetRotX = Math.max(-0.25, Math.min(0.25, -mouse.y * 0.4));
     const targetRotY = Math.max(-0.6, Math.min(0.6, mouse.x * 0.8));
-    const floatRot = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+    const floatRot = Math.sin(t * 0.5) * 0.05;
 
     groupRef.current.rotation.x = THREE.MathUtils.lerp(
       groupRef.current.rotation.x,
@@ -104,81 +107,33 @@ function RobloxNoobCharacter({
       delta * 5,
     );
 
-    // 2. Face Morphing
-    let tLeftEye = { scale: [1, 1, 1] };
-    let tRightEye = { scale: [1, 1, 1] };
-    let tMouth = { scale: [1, 1, 1], rotZ: 0, rotX: 0 };
-    let tBrows = { y: 1.8, rotZ: 0 };
+    // 2. Head tracking (extra mouse-follow on top of body)
+    if (rig.headPivot) {
+      const headRotY = Math.max(-0.5, Math.min(0.5, mouse.x * 0.5));
+      const headRotX = Math.max(-0.3, Math.min(0.3, -mouse.y * 0.35));
+      let headTilt = 0;
+      if (pose === 'confident') headTilt = -0.12;
 
-    if (face === 'wink') {
-      tLeftEye = { scale: [1, 0.1, 1] };
-    } else if (face === 'excited' || face === 'super-excited') {
-      tLeftEye = { scale: [1.2, 1.2, 1] };
-      tRightEye = { scale: [1.2, 1.2, 1] };
-      tMouth = { scale: [1.3, 1.3, 1], rotZ: 0, rotX: 0.2 };
-      tBrows = { y: 1.9, rotZ: 0.2 };
-    } else if (face === 'confident') {
-      tMouth = { scale: [0.8, 0.8, 1], rotZ: -0.2, rotX: 0 };
-      tBrows = { y: 1.75, rotZ: -0.15 };
-    }
-
-    if (leftEyeRef.current)
-      leftEyeRef.current.scale.y = THREE.MathUtils.lerp(
-        leftEyeRef.current.scale.y,
-        tLeftEye.scale[1],
-        delta * 12,
+      rig.headPivot.rotation.y = THREE.MathUtils.lerp(
+        rig.headPivot.rotation.y,
+        headRotY,
+        delta * 6,
       );
-    if (rightEyeRef.current)
-      rightEyeRef.current.scale.y = THREE.MathUtils.lerp(
-        rightEyeRef.current.scale.y,
-        tRightEye.scale[1],
-        delta * 12,
+      rig.headPivot.rotation.x = THREE.MathUtils.lerp(
+        rig.headPivot.rotation.x,
+        headRotX + (pose === 'jump' ? -0.15 : 0),
+        delta * 6,
       );
-    if (mouthRef.current) {
-      mouthRef.current.rotation.z = THREE.MathUtils.lerp(
-        mouthRef.current.rotation.z,
-        tMouth.rotZ,
-        delta * 12,
-      );
-      mouthRef.current.rotation.x = THREE.MathUtils.lerp(
-        mouthRef.current.rotation.x,
-        tMouth.rotX,
-        delta * 12,
-      );
-      mouthRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(
-          mouthRef.current.scale.x,
-          tMouth.scale[0],
-          delta * 12,
-        ),
-      );
-    }
-    if (leftBrowRef.current && rightBrowRef.current) {
-      leftBrowRef.current.position.y = THREE.MathUtils.lerp(
-        leftBrowRef.current.position.y,
-        tBrows.y,
-        delta * 10,
-      );
-      leftBrowRef.current.rotation.z = THREE.MathUtils.lerp(
-        leftBrowRef.current.rotation.z,
-        tBrows.rotZ,
-        delta * 10,
-      );
-      rightBrowRef.current.position.y = THREE.MathUtils.lerp(
-        rightBrowRef.current.position.y,
-        tBrows.y,
-        delta * 10,
-      );
-      rightBrowRef.current.rotation.z = THREE.MathUtils.lerp(
-        rightBrowRef.current.rotation.z,
-        -tBrows.rotZ,
-        delta * 10,
+      rig.headPivot.rotation.z = THREE.MathUtils.lerp(
+        rig.headPivot.rotation.z,
+        headTilt,
+        delta * 4,
       );
     }
 
     // 3. Arm Poses
-    let tLeftArm = -0.1;
-    let tRightArm = 0.1;
+    let tLeftArm = -0.08;
+    let tRightArm = 0.08;
     let tBodyTilt = 0;
     let tBounce = 0;
 
@@ -188,36 +143,43 @@ function RobloxNoobCharacter({
     } else if (pose === 'jump') {
       tLeftArm = -Math.PI * 0.8;
       tRightArm = Math.PI * 0.8;
-      tBounce = Math.abs(Math.sin(state.clock.elapsedTime * 8)) * 0.2;
-    } else if (pose === 'excited') {
-      tLeftArm = -Math.PI * 0.3;
-      tRightArm = Math.PI * 0.3;
+      tBounce = Math.abs(Math.sin(t * 8)) * 0.2;
+    } else if (pose === 'confident') {
+      tLeftArm = -0.25;
+      tRightArm = 0.25;
     }
 
-    if (leftShoulderRef.current) {
-      leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
-        leftShoulderRef.current.rotation.z,
-        tLeftArm,
+    // Idle micro-sway so arms never look frozen
+    const idleSway = Math.sin(t * 1.8) * 0.04;
+
+    if (rig.leftShoulder) {
+      rig.leftShoulder.rotation.z = THREE.MathUtils.lerp(
+        rig.leftShoulder.rotation.z,
+        -(tLeftArm + idleSway),
         delta * 8,
       );
-      leftShoulderRef.current.rotation.x = -0.15;
+      rig.leftShoulder.rotation.x = THREE.MathUtils.lerp(
+        rig.leftShoulder.rotation.x,
+        -0.08,
+        delta * 8,
+      );
     }
-    if (rightShoulderRef.current) {
-      const wave =
-        pose === 'wave' ? Math.sin(state.clock.elapsedTime * 12) * 0.4 : 0;
-      rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
-        rightShoulderRef.current.rotation.z,
-        tRightArm + wave,
+    if (rig.rightShoulder) {
+      const wave = pose === 'wave' ? Math.sin(t * 12) * 0.4 : 0;
+      rig.rightShoulder.rotation.z = THREE.MathUtils.lerp(
+        rig.rightShoulder.rotation.z,
+        -(tRightArm + wave + idleSway),
         delta * 8,
       );
-      rightShoulderRef.current.rotation.x = -0.15;
+      rig.rightShoulder.rotation.x = THREE.MathUtils.lerp(
+        rig.rightShoulder.rotation.x,
+        -0.08,
+        delta * 8,
+      );
     }
 
     // 4. Hover Physics
-    const hoverAmplitude = 0.15;
-    const hoverSpeed = 1.5;
-    const constantFloat =
-      Math.sin(state.clock.elapsedTime * hoverSpeed) * hoverAmplitude;
+    const constantFloat = Math.sin(t * 1.5) * 0.15;
     const targetY = yOffset + constantFloat + tBounce;
 
     groupRef.current.position.y = THREE.MathUtils.lerp(
@@ -225,7 +187,7 @@ function RobloxNoobCharacter({
       targetY,
       delta * 10,
     );
-    const hoverTilt = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+    const hoverTilt = Math.sin(t * 0.8) * 0.05;
     groupRef.current.rotation.z = THREE.MathUtils.lerp(
       groupRef.current.rotation.z,
       tBodyTilt + hoverTilt,
@@ -235,9 +197,7 @@ function RobloxNoobCharacter({
     // 5. Aura Light
     if (auraLightRef.current) {
       const targetIntensity =
-        face === 'confident'
-          ? 0.8 + Math.sin(state.clock.elapsedTime * 3) * 0.2
-          : 0;
+        pose === 'confident' ? 0.8 + Math.sin(t * 3) * 0.2 : 0;
       auraLightRef.current.intensity = THREE.MathUtils.lerp(
         auraLightRef.current.intensity,
         targetIntensity,
@@ -266,20 +226,6 @@ function RobloxNoobCharacter({
       />
 
       <group ref={groupRef}>
-        {(face === 'excited' ||
-          face === 'super-excited' ||
-          face === 'wink') && (
-          <Sparkles
-            count={15}
-            scale={2}
-            size={4}
-            speed={0.4}
-            opacity={1}
-            color="#FFF"
-            position={[0, 1.8, 0]}
-          />
-        )}
-
         {showBubble && (
           <group position={[0, 3.0, 0.5]}>
             <RoundedBox args={[2.8, 0.8, 0.1]} radius={0.1}>
@@ -311,102 +257,13 @@ function RobloxNoobCharacter({
           </group>
         )}
 
-        {/* Character Parts */}
-        <RoundedBox
-          args={[1.1, 1.1, 1.1]}
-          radius={0.15}
-          smoothness={4}
-          position={[0, 1.55, 0]}
-        >
-          <meshStandardMaterial color={COLORS.head} />
-        </RoundedBox>
-        <mesh ref={leftEyeRef} position={[-0.22, 1.65, 0.56]}>
-          <sphereGeometry args={[0.09, 32, 32]} />
-          <meshStandardMaterial color={COLORS.eyes} />
-        </mesh>
-        <mesh ref={rightEyeRef} position={[0.22, 1.65, 0.56]}>
-          <sphereGeometry args={[0.09, 32, 32]} />
-          <meshStandardMaterial color={COLORS.eyes} />
-        </mesh>
-        <mesh ref={leftBrowRef} position={[-0.22, 1.8, 0.55]}>
-          <boxGeometry args={[0.18, 0.04, 0.02]} />
-          <meshStandardMaterial color={COLORS.eyes} />
-        </mesh>
-        <mesh ref={rightBrowRef} position={[0.22, 1.8, 0.55]}>
-          <boxGeometry args={[0.18, 0.04, 0.02]} />
-          <meshStandardMaterial color={COLORS.eyes} />
-        </mesh>
-        <group ref={mouthRef} position={[0, 1.45, 0.58]}>
-          <mesh rotation={[0, 0, Math.PI]}>
-            <torusGeometry args={[0.12, 0.03, 12, 32, Math.PI]} />
-            <meshStandardMaterial color={COLORS.mouth} />
-          </mesh>
-        </group>
-        <RoundedBox
-          args={[1.3, 1.2, 0.65]}
-          radius={0.08}
-          smoothness={4}
-          position={[0, 0.4, 0]}
-        >
-          <meshStandardMaterial color={COLORS.torso} />
-        </RoundedBox>
-
-        <group ref={leftShoulderRef} position={[-0.85, 0.9, 0]}>
-          <mesh position={[0, -0.55, 0]}>
-            <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
-              <meshStandardMaterial color={COLORS.arms} />
-            </RoundedBox>
-            {pose === 'jump' && (
-              <group position={[0, -0.5, 0]}>
-                <Trail
-                  width={0.8}
-                  length={3}
-                  color="#FFF"
-                  attenuation={(t) => t * t}
-                />
-              </group>
-            )}
-          </mesh>
-        </group>
-
-        <group ref={rightShoulderRef} position={[0.85, 0.9, 0]}>
-          <mesh position={[0, -0.55, 0]}>
-            <RoundedBox args={[0.4, 1.1, 0.45]} radius={0.08} smoothness={4}>
-              <meshStandardMaterial color={COLORS.arms} />
-            </RoundedBox>
-            {(pose === 'wave' || pose === 'jump') && (
-              <group position={[0, -0.5, 0]}>
-                <Trail
-                  width={0.8}
-                  length={3}
-                  color="#FFF"
-                  attenuation={(t) => t * t}
-                />
-              </group>
-            )}
-          </mesh>
-        </group>
-
-        <RoundedBox
-          args={[0.5, 1.1, 0.5]}
-          radius={0.06}
-          smoothness={4}
-          position={[-0.32, -0.75, 0]}
-        >
-          <meshStandardMaterial color={COLORS.legs} />
-        </RoundedBox>
-        <RoundedBox
-          args={[0.5, 1.1, 0.5]}
-          radius={0.06}
-          smoothness={4}
-          position={[0.32, -0.75, 0]}
-        >
-          <meshStandardMaterial color={COLORS.legs} />
-        </RoundedBox>
+        <primitive object={rig.wrapper} />
       </group>
     </group>
   );
 }
+
+useGLTF.preload(AVATAR_URL);
 
 // --- MAIN EXPORTED COMPONENT ---
 export function RobloxCharacter3D({
@@ -453,14 +310,7 @@ export function RobloxCharacter3D({
   }
 
   // --- HORIZONTAL (X) POSITION LOGIC ---
-
-  // 1. Start Position (Desktop)
-  // 75% places it perfectly in the center of the right half of the screen
   const startLeft = isMobile ? 50 : 75;
-
-  // 2. End Position (Desktop)
-  // CHANGED: Increased from 5 to 15.
-  // 15% places it safely in the left sidebar area without cutting it off.
   const endLeft = isMobile ? 25 : 10;
 
   const leftPercent = startLeft + (endLeft - startLeft) * easedProgress;
@@ -478,31 +328,40 @@ export function RobloxCharacter3D({
       `}
       style={{
         left: `${leftPercent}%`,
-        // Translate -50% ensures the div is always centered on the specific % point
         transform: `translateX(-50%)`,
         height: '100vh',
       }}
     >
       <Canvas
         camera={{ position: [0, 0.5, 4.5], fov: 40 }}
+        dpr={[1, 2]}
         style={{ background: 'transparent', pointerEvents: 'auto' }}
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.8} />
           <directionalLight position={[5, 5, 5]} intensity={1.2} />
           <pointLight position={[-3, 2, 3]} color="#8b5cf6" intensity={0.4} />
+          {/* Rim light to separate the avatar from the page background */}
+          <pointLight position={[0, 2, -3]} color="#ec4899" intensity={1.5} />
 
-          <RobloxNoobCharacter
-            scrollY={scrollY}
+          <SabbzAvatar
             currentSection={activeSection}
             onBubbleClick={handleBubbleClick}
             bubbleMessage={
-              isInHeroSection ? "Hi! I'm Ready." : sectionData.message
+              isInHeroSection ? "Hi! I'm Sabbz." : sectionData.message
             }
             characterScale={calculatedScale}
             yOffset={calculatedYOffset}
             forceWave={isInHeroSection}
             showBubble={!isInHeroSection}
+          />
+          <ContactShadows
+            position={[0, -1.65, 0]}
+            opacity={0.45}
+            scale={5}
+            blur={2.6}
+            far={3}
+            color="#1e1033"
           />
           <Environment preset="city" />
         </Suspense>
