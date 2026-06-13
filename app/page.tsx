@@ -147,21 +147,17 @@ export default function V4Page() {
       <HudCorners />
 
       {/* Header */}
-      <header className="fixed top-0 inset-x-0 z-30">
-        <div className="container mx-auto px-6 py-5">
-          <p className="font-mono text-sm tracking-[0.3em]">
-            SABBZ<span className="text-red-500">.</span>
-          </p>
-        </div>
+      <header className="fixed top-5 left-6 z-30">
+        <p className="font-mono text-sm tracking-[0.3em]">
+          SABBZ<span className="text-red-500">.</span>
+        </p>
       </header>
 
       {/* Status mark */}
-      <div className="fixed bottom-5 inset-x-0 z-30 pointer-events-none">
-        <div className="container mx-auto px-6 flex items-center justify-end">
-          <span className="inline-block rotate-180 font-mono text-xs tracking-[0.3em] text-white/30">
-            SABBZ<span className="text-red-500/70">.</span>
-          </span>
-        </div>
+      <div className="fixed bottom-5 right-6 z-30 pointer-events-none">
+        <span className="inline-block rotate-180 font-mono text-xs tracking-[0.3em] text-white/30">
+          SABBZ<span className="text-red-500/70">.</span>
+        </span>
       </div>
 
       <main className="relative z-10">
@@ -289,7 +285,7 @@ export default function V4Page() {
       </main>
 
       <footer className="relative z-10 border-t border-white/10 py-6 bg-black/60 backdrop-blur-sm">
-        <div className="container mx-auto px-6 font-mono text-[11px] text-white/40">
+        <div className="px-6 font-mono text-[11px] text-white/40">
           <p>© {new Date().getFullYear()} SABBZ — ALL RIGHTS RESERVED</p>
         </div>
       </footer>
