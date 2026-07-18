@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { GameCardV4 } from '@/components/v4/game-card';
 import { TweetGridV4 } from '@/components/v4/tweet-grid';
 
-import gamesData from '@/data/games.json';
 import mediaData from '@/data/media.json';
 
 const V4Scene = dynamic(
@@ -22,23 +21,14 @@ interface Game {
   peakCCU?: string;
   visits?: string;
   visitsRaw?: number;
+  ccuRaw?: number;
 }
 
 function formatTotalVisits(n: number): string {
-  if (n >= 1_000_000) return `${Math.floor(n / 1_000_000)}M+`;
-  if (n >= 1_000) return `${Math.floor(n / 1_000)}K+`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K+`;
   return `${n}`;
 }
-
-function parseStat(value: string | undefined): number {
-  if (!value) return 0;
-  const n = parseInt(value.replace(/[^\d]/g, ''), 10);
-  return Number.isFinite(n) ? n : 0;
-}
-
-const sortedFallback = [...(gamesData as Game[])].sort(
-  (a, b) => parseStat(b.visits) - parseStat(a.visits),
-);
 
 function DiscordIcon({ className }: { className?: string }) {
   return (
@@ -122,7 +112,7 @@ function HudCorners() {
 }
 
 export default function V4Page() {
-  const [games, setGames] = useState<Game[]>(sortedFallback);
+  const [games, setGames] = useState<Game[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +130,10 @@ export default function V4Page() {
   const totalVisits = formatTotalVisits(
     games.reduce((sum, g) => sum + (g.visitsRaw ?? 0), 0),
   );
+
+  const featuredGames = [...games]
+    .sort((a, b) => (b.ccuRaw ?? 0) - (a.ccuRaw ?? 0))
+    .slice(0, 9);
 
   return (
     <div className="min-h-screen overflow-x-hidden text-white">
@@ -226,7 +220,7 @@ export default function V4Page() {
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {games.map((game) => (
+              {featuredGames.map((game) => (
                 <GameCardV4 key={game.id} {...game} />
               ))}
             </div>

@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import {
   SabbzAvatarV2,
   type AvatarPose,
-} from '@/components/v2/sabbz-avatar';
+} from '@/components/v4/sabbz-avatar';
 import { Facility } from '@/components/v4/facility';
 import {
   CrimsonPlanet,

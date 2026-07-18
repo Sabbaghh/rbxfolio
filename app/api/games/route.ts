@@ -1,28 +1,28 @@
 import { NextResponse } from 'next/server';
-import gamesData from '@/data/games.json';
 
 export const revalidate = 60;
 
-interface StaticGame {
-  id: string;
-  link: string;
-  title?: string;
-  studio?: string;
-  thumbnail?: string;
-  peakCCU?: string;
-  visits?: string;
+// Sabbz2z's Roblox user ID.
+const ROBLOX_USER_ID = 6079049520;
+const FAVORITES_PAGE_SIZE = 50;
+
+interface RobloxCreator {
+  id: number;
+  type: string;
+  name: string;
+}
+
+interface RobloxFavoriteGame {
+  id: number; // universeId
+  name: string;
+  creator: RobloxCreator;
+  rootPlace?: { id: number };
+  placeVisits?: number;
 }
 
 interface RobloxGameInfo {
-  name: string;
-  creatorName: string;
   visits: number;
   playing: number;
-}
-
-function extractPlaceId(link: string): string | null {
-  const match = link.match(/\/games\/(\d+)/);
-  return match ? match[1] : null;
 }
 
 function formatVisits(n: number): string {
@@ -31,27 +31,17 @@ function formatVisits(n: number): string {
   return String(n);
 }
 
-function parseFallbackCCU(value: string | undefined): number {
-  if (!value) return 0;
-  const n = parseInt(value.replace(/[^\d]/g, ''), 10);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function pick(staticValue: string | undefined, apiValue: string): string {
-  return staticValue && staticValue.trim() !== '' ? staticValue : apiValue;
-}
-
-async function fetchUniverseId(placeId: string): Promise<number | null> {
+async function fetchFavorites(): Promise<RobloxFavoriteGame[]> {
   try {
     const r = await fetch(
-      `https://apis.roblox.com/universes/v1/places/${placeId}/universe`,
-      { next: { revalidate: 86_400 } },
+      `https://games.roblox.com/v2/users/${ROBLOX_USER_ID}/favorite/games?limit=${FAVORITES_PAGE_SIZE}`,
+      { next: { revalidate: 60 } },
     );
-    if (!r.ok) return null;
-    const j = (await r.json()) as { universeId?: number };
-    return j.universeId ?? null;
+    if (!r.ok) return [];
+    const j = (await r.json()) as { data?: RobloxFavoriteGame[] };
+    return j.data ?? [];
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -67,18 +57,10 @@ async function fetchGameInfo(
     );
     if (!r.ok) return result;
     const j = (await r.json()) as {
-      data?: {
-        id: number;
-        name?: string;
-        creator?: { name?: string };
-        visits?: number;
-        playing?: number;
-      }[];
+      data?: { id: number; visits?: number; playing?: number }[];
     };
     for (const entry of j.data ?? []) {
       result.set(entry.id, {
-        name: entry.name ?? '',
-        creatorName: entry.creator?.name ?? '',
         visits: entry.visits ?? 0,
         playing: entry.playing ?? 0,
       });
@@ -101,10 +83,7 @@ async function fetchThumbnails(
     );
     if (!r.ok) return result;
     const j = (await r.json()) as {
-      data?: {
-        universeId: number;
-        thumbnails?: { imageUrl?: string }[];
-      }[];
+      data?: { universeId: number; thumbnails?: { imageUrl?: string }[] }[];
     };
     for (const entry of j.data ?? []) {
       const url = entry.thumbnails?.[0]?.imageUrl;
@@ -117,44 +96,31 @@ async function fetchThumbnails(
 }
 
 export async function GET() {
-  const games = gamesData as StaticGame[];
+  const favorites = await fetchFavorites();
 
-  const universeLookups = await Promise.all(
-    games.map(async (game) => {
-      const placeId = extractPlaceId(game.link);
-      const universeId = placeId ? await fetchUniverseId(placeId) : null;
-      return { game, universeId };
-    }),
-  );
-
-  const universeIds = universeLookups
-    .map((u) => u.universeId)
-    .filter((id): id is number => id != null);
-
+  const universeIds = favorites.map((f) => f.id);
   const [info, thumbs] = await Promise.all([
     fetchGameInfo(universeIds),
     fetchThumbnails(universeIds),
   ]);
 
-  const enriched = universeLookups.map(({ game, universeId }) => {
-    const apiInfo = universeId != null ? info.get(universeId) : undefined;
-    const apiThumb = universeId != null ? thumbs.get(universeId) : undefined;
-    const visitsRaw = apiInfo?.visits ?? parseFallbackCCU(game.visits);
-
-    const display = {
-      id: game.id,
-      link: game.link,
-      title: pick(game.title, apiInfo?.name ?? ''),
-      studio: pick(game.studio, apiInfo?.creatorName ?? ''),
-      thumbnail: pick(game.thumbnail, apiThumb ?? ''),
-      peakCCU: apiInfo
-        ? apiInfo.playing.toLocaleString('en-US')
-        : (game.peakCCU ?? ''),
-      visits: apiInfo ? formatVisits(apiInfo.visits) : (game.visits ?? ''),
+  const enriched = favorites.map((fav) => {
+    const live = info.get(fav.id);
+    const visitsRaw = live?.visits ?? fav.placeVisits ?? 0;
+    const rootPlaceId = fav.rootPlace?.id;
+    return {
+      id: String(fav.id),
+      link: rootPlaceId
+        ? `https://www.roblox.com/games/${rootPlaceId}`
+        : `https://www.roblox.com/games/`,
+      title: fav.name,
+      studio: fav.creator?.name ?? '',
+      thumbnail: thumbs.get(fav.id) ?? '',
+      peakCCU: live ? live.playing.toLocaleString('en-US') : '',
+      visits: formatVisits(visitsRaw),
       visitsRaw,
+      ccuRaw: live?.playing ?? 0,
     };
-
-    return display;
   });
 
   enriched.sort((a, b) => b.visitsRaw - a.visitsRaw);

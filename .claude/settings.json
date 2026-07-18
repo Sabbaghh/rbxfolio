@@ -9,7 +9,8 @@
       "Bash(curl -s -o /dev/null -w \"v2: %{http_code}\\\\n\" http://localhost:3000/v2)",
       "Bash(curl -s -o /dev/null -w \"v3: %{http_code}\\\\n\" http://localhost:3000/v3)",
       "Bash(curl -s -o /dev/null -w \"v4: %{http_code}\\\\n\" http://localhost:3000/v4)",
-      "Bash(curl -s -o /dev/null -w \"/: %{http_code}\\\\n\" http://localhost:3000/)"
+      "Bash(curl -s -o /dev/null -w \"/: %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(npx tsc *)"
     ]
   }
 }
